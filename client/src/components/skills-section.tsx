@@ -19,19 +19,6 @@ export function SkillsSection() {
     {
       title: "Data Science & Analytics",
       skills: ["Data visualization", "Machine learning", "BigQuery", "Tableau", "PowerQuery", "PowerPivot", "SQL Server", "Hadoop"]
-    },
-    {
-      title: "Digital Marketing & Finance",
-      skills: ["Financial analysis", "Data-driven marketing strategies"]
-    },
-    {
-      title: "Soft Skills",
-      skills: [
-        "Problem-Solving & Strategic Thinking",
-        "Professional Communication & Leadership",
-        "Resume Writing & LinkedIn Optimization",
-        "Job Search Strategies"
-      ]
     }
   ];
 
