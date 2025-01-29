@@ -3,6 +3,7 @@ import { motion, useScroll, useSpring } from "framer-motion";
 
 export function NavigationBar() {
   const links = [
+    { href: "#", label: "Home" },
     { href: "#about", label: "About" },
     { href: "#skills", label: "Skills" },
     { href: "#contact", label: "Contact" },
@@ -17,9 +18,13 @@ export function NavigationBar() {
 
   const handleScrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+    if (href === "#") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
     }
   };
 
@@ -136,17 +141,22 @@ export function NavigationBar() {
 
         .nav-btn:nth-child(1):hover ~ svg .rect {
           stroke-dashoffset: 0;
-          stroke-dasharray: 0 2 8 73.3 8 10.7;
+          stroke-dasharray: 0 2 8 65 8 19;
         }
 
         .nav-btn:nth-child(2):hover ~ svg .rect {
           stroke-dashoffset: 0;
-          stroke-dasharray: 0 12.6 9.5 49.3 9.5 31.6;
+          stroke-dasharray: 0 12.6 9.5 41.3 9.5 39.6;
         }
 
         .nav-btn:nth-child(3):hover ~ svg .rect {
           stroke-dashoffset: 0;
-          stroke-dasharray: 0 24.5 8.5 27.5 8.5 55.5;
+          stroke-dasharray: 0 24.5 8.5 19.5 8.5 63.5;
+        }
+
+        .nav-btn:nth-child(4):hover ~ svg .rect {
+          stroke-dashoffset: 0;
+          stroke-dasharray: 0 34.7 6.9 2.2 6.9 84;
         }
 
         .nav-btn:hover ~ .outline .rect {
