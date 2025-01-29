@@ -39,7 +39,7 @@ export function NavigationBar() {
         <div className="container mx-auto px-4">
           <div className="relative flex flex-col items-center justify-center">
             <motion.h1 
-              className="text-2xl font-bold mt-4 mb-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70"
+              className="text-3xl font-bold mt-4 mb-2 text-foreground"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
@@ -104,6 +104,12 @@ export function NavigationBar() {
           margin: 0 auto 1rem;
         }
 
+        .container-nav:hover .outline .rect {
+          transition: 999999s;
+          stroke-dashoffset: 1;
+          stroke-dasharray: 0;
+        }
+
         .container-nav {
           position: absolute;
           inset: 0;
@@ -114,12 +120,6 @@ export function NavigationBar() {
           align-items: center;
           padding: 0.5em;
           border-radius: 8px;
-        }
-
-        .container-nav:hover .outline .rect {
-          transition: 999999s;
-          stroke-dashoffset: 1;
-          stroke-dasharray: 0;
         }
 
         .nav-btn {
