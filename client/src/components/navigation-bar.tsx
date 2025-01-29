@@ -20,7 +20,7 @@ export function NavigationBar() {
         <div className="flex items-center justify-between h-20">
           <Link href="/">
             <a className="text-xl font-bold hover:text-primary transition-colors">
-              Edlira Taipi
+              My Portfolio
             </a>
           </Link>
           <div className="flex space-x-2">
