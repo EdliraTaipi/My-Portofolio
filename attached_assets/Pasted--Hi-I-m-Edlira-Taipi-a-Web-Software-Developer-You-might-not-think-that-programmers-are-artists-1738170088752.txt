@@ -1,0 +1,442 @@
+"Hi, I'm Edlira Taipi, a Web & Software Developer
+
+"You might not think that programmers are artists, but programming is an extremely creative profession. It's logic-based creativity." – John Romero
+On git hub icon  link my github account https://github.com/EdliraTaipi  also  on the  top   add this  as  a short  video   on the top    
+https://videos.pexels.com/video-files/853986/853986-hd_1920_1080_25fps.mp4
+Arrange somewhere nice also  these two images   
+https://p1.pxfuel.com/preview/97/32/886/programmer-code-programming-coding-technology-html.jpg 
+https://p1.pxfuel.com/preview/14/432/956/laptop-computer-dark-room.jpg
+<!-- HTML File: index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Theme Switch</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <label class="switch">
+        <input type="checkbox" id="themeToggle">
+        <span class="slider"></span>
+    </label>
+
+    <script>
+        const toggle = document.getElementById("themeToggle");
+        toggle.addEventListener("change", () => {
+            if (toggle.checked) {
+                document.body.style.background = "#fff";
+                document.body.style.color = "black";
+            } else {
+                document.body.style.background = "#222";
+                document.body.style.color = "white";
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+/* CSS File: styles.css */
+body {
+    transition: background 0.5s, color 0.5s;
+    background: #222;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #444;
+    transition: 0.4s;
+    border-radius: 34px;
+    overflow: hidden;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: yellow;
+    transition: 0.4s;
+    border-radius: 50%;
+    box-shadow: inset 4px -4px 0px 0px orange;
+}
+
+input:checked + .slider {
+    background-color: #fff;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+    background-color: black;
+    box-shadow: inset 4px -4px 0px 0px gray;
+}
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edlira Taipi Portfolio</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Welcome to My Portfolio</h1>
+        <nav>
+            <ul>
+                <li><a href="#about">About</a></li>
+                <li><a href="#skills">Skills</a></li>
+                <li><a href="#projects">Projects</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section id="about">
+        <h2>About Me</h2>
+        <p>Hi, I'm Edlira Taipi, a passionate developer with expertise in data analysis, web development, and programming.</p>
+    </section>
+
+    <section id="skills">
+        <h2>Skills</h2>
+        <ul>
+            <li>Python, JavaScript, SQL, PHP</li>
+            <li>Angular, TailwindCSS, Node.js</li>
+            <li>Data visualization, Financial analysis</li>
+        </ul>
+    </section>
+
+    <section id="projects">
+        <h2>Projects</h2>
+        <p>Check out my projects on <a href="https://github.com/EdliraTaipi" target="_blank">GitHub</a>.</p>
+    </section>
+
+    <section id="contact">
+        <h2>Contact</h2>
+        <p>Email: <a href="mailto:edlira.taipi@hotmail.com">edlira.taipi@hotmail.com</a></p>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 Edlira Taipi. All Rights Reserved.</p>
+    </footer>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Button</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <a href="https://github.com" target="_blank">
+        <button class="Btn">
+            <svg class="svgIcon" viewBox="0 0 496 512" height="1.4em" xmlns="http://www.w3.org/2000/svg">
+                <path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8z"></path>
+            </svg>
+            <span class="text">GitHub</span>
+        </button>
+    </a>
+</body>
+</html>
+
+.Btn {
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s ease-in-out;
+    cursor: pointer;
+    position: relative;
+    background-color: rgb(31, 31, 31);
+    overflow: hidden;
+}
+
+.svgIcon {
+    transition: all 0.3s ease-in-out;
+}
+
+.svgIcon path {
+    fill: white;
+}
+
+.text {
+    position: absolute;
+    color: white;
+    width: 120px;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.4s ease-in-out;
+}
+
+.Btn:hover {
+    width: 110px;
+    border-radius: 30px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.Btn:hover .text {
+    opacity: 1;
+}
+
+.Btn:hover .svgIcon {
+    opacity: 0;
+}
+<!-- HTML File: bark_navbar.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bark-Themed Navigation</title>
+    <link rel="stylesheet" href="bark_navbar.css">
+</head>
+<body>
+    <div class="nav">
+        <div class="container">
+            <div class="btn">Home</div>
+            <div class="btn">Contact</div>
+            <div class="btn">About</div>
+            <div class="btn">FAQ</div>
+            <svg
+                class="outline"
+                overflow="visible"
+                width="400"
+                height="60"
+                viewBox="0 0 400 60"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <rect
+                    class="rect"
+                    pathLength="100"
+                    x="0"
+                    y="0"
+                    width="400"
+                    height="60"
+                    fill="transparent"
+                    stroke-width="5"
+                ></rect>
+            </svg>
+        </div>
+    </div>
+</body>
+</html>
+
+/* CSS File: bark_navbar.css */
+.outline {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.rect {
+    stroke-dashoffset: 5;
+    stroke-dasharray: 0 0 10 40 10 40;
+    transition: 0.5s;
+    stroke: #6B4226; /* Dark Brown Stroke */
+}
+
+.nav {
+    position: relative;
+    width: 400px;
+    height: 60px;
+}
+
+.container:hover .outline .rect {
+    transition: 999999s;
+    stroke-dashoffset: 1;
+    stroke-dasharray: 0;
+}
+
+.container {
+    position: absolute;
+    inset: 0;
+    background: #8B5A2B; /* Bark Brown */
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0.5em;
+    border-radius: 10px;
+}
+
+.btn {
+    padding: 0.5em 1.5em;
+    color: #F5DEB3; /* Light wood color */
+    cursor: pointer;
+    transition: 0.1s;
+}
+
+.btn:hover {
+    background: #6B4226; /* Darker brown */
+    border-radius: 5px;
+}
+
+.btn:nth-child(1):hover ~ svg .rect {
+    stroke-dashoffset: 0;
+    stroke-dasharray: 0 2 8 73.3 8 10.7;
+}
+
+.btn:nth-child(2):hover ~ svg .rect {
+    stroke-dashoffset: 0;
+    stroke-dasharray: 0 12.6 9.5 49.3 9.5 31.6;
+}
+
+.btn:nth-child(3):hover ~ svg .rect {
+    stroke-dashoffset: 0;
+    stroke-dasharray: 0 24.5 8.5 27.5 8.5 55.5;
+}
+
+.btn:nth-child(4):hover ~ svg .rect {
+    stroke-dashoffset: 0;
+    stroke-dasharray: 0 34.7 6.9 10.2 6.9 76;
+}
+
+.btn:hover ~ .outline .rect {
+    stroke-dashoffset: 0;
+    stroke-dasharray: 0 0 10 40 10 40;
+    transition: 0.5s !important;
+}
+
+<div class="form-card1">
+  <div class="form-card2">
+    <form class="form">
+      <p class="form-heading">Get In Touch</p>
+
+      <div class="form-field">
+        <input required placeholder="Name" class="input-field" type="text" />
+      </div>
+
+      <div class="form-field">
+        <input required placeholder="Email" class="input-field" type="email" />
+      </div>
+
+      <div class="form-field">
+        <textarea required placeholder="Message" cols="30" rows="3" class="input-field"></textarea>
+      </div>
+
+      <button class="sendMessage-btn">Send Message</button>
+    </form>
+  </div>
+</div>
+
+<style>
+.form {
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+  font-family: inherit;
+  gap: 10px;
+  padding-inline: 2em;
+  padding-bottom: 0.4em;
+  background-color: #171717;
+  border-radius: 20px;
+}
+
+.form-heading {
+  text-align: center;
+  margin: 2em;
+  color: #64ffda;
+  font-size: 1.2em;
+  background-color: transparent;
+  align-self: center;
+}
+
+.form-field {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  border-radius: 10px;
+  padding: 0.6em;
+  border: none;
+  outline: none;
+  color: white;
+  background-color: #171717;
+  box-shadow: inset 2px 5px 10px rgb(5, 5, 5);
+}
+
+.input-field {
+  background: none;
+  border: none;
+  outline: none;
+  width: 100%;
+  color: #ccd6f6;
+  padding-inline: 1em;
+}
+
+.sendMessage-btn {
+  cursor: pointer;
+  margin-bottom: 3em;
+  padding: 1em;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  background-color: transparent;
+  color: #64ffda;
+  font-weight: bold;
+  outline: 1px solid #64ffda;
+  transition: all ease-in-out 0.3s;
+}
+
+.sendMessage-btn:hover {
+  transition: all ease-in-out 0.3s;
+  background-color: #64ffda;
+  color: #000;
+  cursor: pointer;
+  box-shadow: inset 2px 5px 10px rgb(5, 5, 5);
+}
+
+.form-card1 {
+  background-image: linear-gradient(163deg, #64ffda 0%, #64ffda 100%);
+  border-radius: 22px;
+  transition: all 0.3s;
+}
+
+.form-card1:hover {
+  box-shadow: 0px 0px 30px 1px rgba(100, 255, 218, 0.3);
+}
+
+.form-card2 {
+  border-radius: 0;
+  transition: all 0.2s;
+}
+
+.form-card2:hover {
+  transform: scale(0.98);
+  border-radius: 20px;
+}
+</style>
