@@ -15,12 +15,6 @@ export function AboutSection() {
           <div className="grid md:grid-cols-2 gap-8">
             <Card>
               <CardContent className="p-6">
-                <blockquote className="text-lg italic mb-4">
-                  "You might not think that programmers are artists, but programming is an extremely creative profession. It's logic-based creativity."
-                  <footer className="text-sm text-muted-foreground mt-2">
-                    - John Romero
-                  </footer>
-                </blockquote>
                 <p className="text-muted-foreground">
                   I'm a passionate developer with expertise in data analysis, web development, and programming. I strive to create elegant solutions that combine functionality with aesthetic appeal.
                 </p>
