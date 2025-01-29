@@ -36,6 +36,15 @@ export function AboutSection() {
                 alt="Programming"
                 className="absolute inset-0 w-full h-full object-cover"
                 style={{ y }}
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  rotate: [0, 1, -1, 0]
+                }}
+                transition={{ 
+                  duration: 20,
+                  repeat: Infinity,
+                  repeatType: "reverse"
+                }}
               />
               <motion.div 
                 className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"
@@ -45,10 +54,18 @@ export function AboutSection() {
             </motion.div>
 
             <Card className="md:col-span-1">
-              <CardContent className="p-6">
+              <CardContent className="p-6 flex items-center justify-center min-h-[300px]">
                 <motion.p 
-                  className="text-muted-foreground"
+                  className="text-muted-foreground text-center"
                   style={{ opacity }}
+                  animate={{ 
+                    y: [0, -5, 0],
+                  }}
+                  transition={{ 
+                    duration: 3,
+                    repeat: Infinity,
+                    repeatType: "reverse"
+                  }}
                 >
                   I'm a passionate developer with expertise in data analysis, web development, and programming. I strive to create elegant solutions that combine functionality with aesthetic appeal.
                 </motion.p>
@@ -68,6 +85,16 @@ export function AboutSection() {
                 alt="Development"
                 className="absolute inset-0 w-full h-full object-cover"
                 style={{ y: useTransform(scrollYProgress, [0, 1], [-100, 100]) }}
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  rotate: [0, -1, 1, 0]
+                }}
+                transition={{ 
+                  duration: 20,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  delay: 1
+                }}
               />
               <motion.div 
                 className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"
