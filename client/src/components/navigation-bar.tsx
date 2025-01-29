@@ -10,27 +10,46 @@ export function NavigationBar() {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-b">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+    <nav className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm">
+      <motion.div
+        className="container mx-auto px-4"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex items-center justify-between h-20">
           <Link href="/">
-            <a className="text-xl font-bold">Edlira Taipi</a>
+            <a className="text-xl font-bold hover:text-primary transition-colors">
+              Edlira Taipi
+            </a>
           </Link>
-          <div className="flex space-x-4">
-            {links.map((link) => (
-              <motion.a
+          <div className="flex space-x-2">
+            {links.map((link, i) => (
+              <motion.div
                 key={link.href}
-                href={link.href}
-                className="px-3 py-2 rounded-md text-sm font-medium hover:text-primary transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
               >
-                {link.label}
-              </motion.a>
+                <a
+                  href={link.href}
+                  className="relative px-4 py-2 group"
+                >
+                  <span className="relative z-10 text-sm font-medium">
+                    {link.label}
+                  </span>
+                  <motion.div
+                    className="absolute inset-0 bg-primary/10 rounded-lg"
+                    initial={{ scale: 0 }}
+                    whileHover={{ scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                  />
+                </a>
+              </motion.div>
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
     </nav>
   );
 }
