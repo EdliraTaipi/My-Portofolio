@@ -1,9 +1,19 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 
 export function AboutSection() {
+  const sectionRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"]
+  });
+
+  const y = useTransform(scrollYProgress, [0, 1], [100, -100]);
+  const opacity = useTransform(scrollYProgress, [0, 0.3, 0.8, 1], [0, 1, 1, 0]);
+
   return (
-    <section id="about" className="py-20 bg-background">
+    <section id="about" className="py-20 bg-background" ref={sectionRef}>
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0 }}
@@ -19,20 +29,29 @@ export function AboutSection() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
+              whileHover={{ scale: 1.05 }}
             >
-              <img
+              <motion.img
                 src="https://p1.pxfuel.com/preview/97/32/886/programmer-code-programming-coding-technology-html.jpg"
                 alt="Programming"
-                className="absolute inset-0 w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ y }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"
+                whileHover={{ opacity: 0.7 }}
+                transition={{ duration: 0.3 }}
+              />
             </motion.div>
 
             <Card className="md:col-span-1">
               <CardContent className="p-6">
-                <p className="text-muted-foreground">
+                <motion.p 
+                  className="text-muted-foreground"
+                  style={{ opacity }}
+                >
                   I'm a passionate developer with expertise in data analysis, web development, and programming. I strive to create elegant solutions that combine functionality with aesthetic appeal.
-                </p>
+                </motion.p>
               </CardContent>
             </Card>
 
@@ -42,13 +61,19 @@ export function AboutSection() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
+              whileHover={{ scale: 1.05 }}
             >
-              <img
+              <motion.img
                 src="https://p1.pxfuel.com/preview/14/432/956/laptop-computer-dark-room.jpg"
                 alt="Development"
-                className="absolute inset-0 w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ y: useTransform(scrollYProgress, [0, 1], [-100, 100]) }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"
+                whileHover={{ opacity: 0.7 }}
+                transition={{ duration: 0.3 }}
+              />
             </motion.div>
           </div>
         </motion.div>

@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { motion } from "framer-motion";
+import { motion, useScroll, useSpring } from "framer-motion";
 
 export function NavigationBar() {
   const links = [
@@ -8,6 +8,13 @@ export function NavigationBar() {
     { href: "#projects", label: "Projects" },
     { href: "#contact", label: "Contact" },
   ];
+
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
 
   const handleScrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
@@ -18,50 +25,56 @@ export function NavigationBar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm">
+    <nav className="fixed top-0 left-0 right-0 z-40">
       <motion.div
-        className="container mx-auto px-4"
+        className="h-1 bg-primary origin-[0%]"
+        style={{ scaleX }}
+      />
+      <motion.div
+        className="bg-background/80 backdrop-blur-sm border-b border-border/40"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="relative flex items-center justify-center h-20">
-          {/* Center navigation items */}
-          <div className="flex space-x-8">
-            {links.map((link, i) => (
-              <motion.div
-                key={link.href}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-              >
-                <a
-                  href={link.href}
-                  onClick={(e) => handleScrollToSection(e, link.href)}
-                  className="relative px-4 py-2 group overflow-hidden"
+        <div className="container mx-auto px-4">
+          <div className="relative flex items-center justify-center h-20">
+            {/* Center navigation items */}
+            <div className="flex space-x-8">
+              {links.map((link, i) => (
+                <motion.div
+                  key={link.href}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
                 >
-                  <motion.span 
-                    className="relative z-10 text-sm font-medium"
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ duration: 0.2 }}
+                  <a
+                    href={link.href}
+                    onClick={(e) => handleScrollToSection(e, link.href)}
+                    className="relative px-4 py-2 group overflow-hidden"
                   >
-                    {link.label}
-                  </motion.span>
-                  <motion.div
-                    className="absolute bottom-0 left-0 h-0.5 w-full bg-gradient-to-r from-primary/80 to-primary"
-                    initial={{ scaleX: 0 }}
-                    whileHover={{ scaleX: 1 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg"
-                    initial={{ scale: 0, opacity: 0 }}
-                    whileHover={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.2 }}
-                  />
-                </a>
-              </motion.div>
-            ))}
+                    <motion.span 
+                      className="relative z-10 text-sm font-medium"
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {link.label}
+                    </motion.span>
+                    <motion.div
+                      className="absolute bottom-0 left-0 h-0.5 w-full bg-gradient-to-r from-primary/80 to-primary"
+                      initial={{ scaleX: 0 }}
+                      whileHover={{ scaleX: 1 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg"
+                      initial={{ scale: 0, opacity: 0 }}
+                      whileHover={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.2 }}
+                    />
+                  </a>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </motion.div>
