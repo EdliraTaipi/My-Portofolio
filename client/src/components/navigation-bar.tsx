@@ -9,6 +9,14 @@ export function NavigationBar() {
     { href: "#contact", label: "Contact" },
   ];
 
+  const handleScrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    const element = document.querySelector(href);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm">
       <motion.div
@@ -17,25 +25,9 @@ export function NavigationBar() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="relative flex items-center justify-between h-20">
-          <Link href="/">
-            <motion.a 
-              className="text-xl font-bold relative group"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <span className="relative z-10 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
-                My Portfolio
-              </span>
-              <motion.div
-                className="absolute inset-0 bg-primary/10 rounded-lg"
-                initial={{ scale: 0 }}
-                whileHover={{ scale: 1.1 }}
-                transition={{ duration: 0.2 }}
-              />
-            </motion.a>
-          </Link>
-          <div className="flex space-x-2">
+        <div className="relative flex items-center justify-center h-20">
+          {/* Center navigation items */}
+          <div className="flex space-x-8">
             {links.map((link, i) => (
               <motion.div
                 key={link.href}
@@ -45,21 +37,26 @@ export function NavigationBar() {
               >
                 <a
                   href={link.href}
+                  onClick={(e) => handleScrollToSection(e, link.href)}
                   className="relative px-4 py-2 group overflow-hidden"
                 >
-                  <span className="relative z-10 text-sm font-medium">
+                  <motion.span 
+                    className="relative z-10 text-sm font-medium"
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ duration: 0.2 }}
+                  >
                     {link.label}
-                  </span>
+                  </motion.span>
                   <motion.div
-                    className="absolute bottom-0 left-0 h-0.5 w-full bg-primary"
+                    className="absolute bottom-0 left-0 h-0.5 w-full bg-gradient-to-r from-primary/80 to-primary"
                     initial={{ scaleX: 0 }}
                     whileHover={{ scaleX: 1 }}
                     transition={{ duration: 0.3 }}
                   />
                   <motion.div
-                    className="absolute inset-0 bg-primary/10 rounded-lg"
-                    initial={{ scale: 0 }}
-                    whileHover={{ scale: 1 }}
+                    className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg"
+                    initial={{ scale: 0, opacity: 0 }}
+                    whileHover={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.2 }}
                   />
                 </a>
