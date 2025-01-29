@@ -42,10 +42,19 @@ export function ContactForm() {
               transition={{ duration: 0.6 }}
               className="relative h-[400px] rounded-lg overflow-hidden shadow-xl order-2 md:order-1"
             >
-              <img
+              <motion.img
                 src="https://images.pexels.com/photos/5605061/pexels-photo-5605061.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
                 alt="Contact"
                 className="absolute inset-0 w-full h-full object-cover"
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  rotate: [0, 1, -1, 0]
+                }}
+                transition={{ 
+                  duration: 20,
+                  repeat: Infinity,
+                  repeatType: "reverse"
+                }}
               />
               <motion.div 
                 className="absolute inset-0 bg-primary/10 backdrop-blur-[2px]"
@@ -53,6 +62,18 @@ export function ContactForm() {
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.3, duration: 0.5 }}
+                animate={{
+                  background: [
+                    "hsla(var(--primary) / 0.1)",
+                    "hsla(var(--primary) / 0.2)",
+                    "hsla(var(--primary) / 0.1)"
+                  ]
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  repeatType: "reverse"
+                }}
               />
             </motion.div>
             <Card className="max-w-md mx-auto w-full order-1 md:order-2">
