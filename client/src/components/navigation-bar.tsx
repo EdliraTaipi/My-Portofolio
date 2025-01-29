@@ -5,7 +5,6 @@ export function NavigationBar() {
   const links = [
     { href: "#about", label: "About" },
     { href: "#skills", label: "Skills" },
-    { href: "#projects", label: "Projects" },
     { href: "#contact", label: "Contact" },
   ];
 
@@ -148,11 +147,6 @@ export function NavigationBar() {
         .nav-btn:nth-child(3):hover ~ svg .rect {
           stroke-dashoffset: 0;
           stroke-dasharray: 0 24.5 8.5 27.5 8.5 55.5;
-        }
-
-        .nav-btn:nth-child(4):hover ~ svg .rect {
-          stroke-dashoffset: 0;
-          stroke-dasharray: 0 34.7 6.9 10.2 6.9 76;
         }
 
         .nav-btn:hover ~ .outline .rect {
