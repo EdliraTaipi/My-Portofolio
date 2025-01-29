@@ -20,18 +20,28 @@ export function AboutSection() {
                 </p>
               </CardContent>
             </Card>
-            <div className="grid grid-cols-2 gap-4">
-              <img
-                src="https://p1.pxfuel.com/preview/97/32/886/programmer-code-programming-coding-technology-html.jpg"
-                alt="Programming"
-                className="rounded-lg object-cover w-full h-full"
-              />
-              <img
-                src="https://p1.pxfuel.com/preview/14/432/956/laptop-computer-dark-room.jpg"
-                alt="Development"
-                className="rounded-lg object-cover w-full h-full"
-              />
-            </div>
+            <motion.div 
+              className="grid gap-4"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <div className="relative h-[200px] rounded-lg overflow-hidden shadow-lg">
+                <img
+                  src="https://p1.pxfuel.com/preview/97/32/886/programmer-code-programming-coding-technology-html.jpg"
+                  alt="Programming"
+                  className="absolute inset-0 w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                />
+              </div>
+              <div className="relative h-[200px] rounded-lg overflow-hidden shadow-lg">
+                <img
+                  src="https://p1.pxfuel.com/preview/14/432/956/laptop-computer-dark-room.jpg"
+                  alt="Development"
+                  className="absolute inset-0 w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                />
+              </div>
+            </motion.div>
           </div>
         </motion.div>
       </div>
