@@ -81,13 +81,14 @@ export function ContactForm() {
                 alt="Contact"
                 className="absolute inset-0 w-full h-full object-cover"
                 animate={{ 
-                  scale: [1, 1.1, 1],
-                  rotate: [0, 1, -1, 0]
+                  scale: [1, 1.05, 1],
+                  rotate: [0, 1, 0]
                 }}
                 transition={{ 
-                  duration: 20,
+                  duration: 8,
                   repeat: Infinity,
-                  repeatType: "reverse"
+                  repeatType: "reverse",
+                  ease: "easeInOut"
                 }}
               />
               <motion.div 
