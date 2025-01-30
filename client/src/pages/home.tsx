@@ -5,7 +5,6 @@ import { AboutSection } from "@/components/about-section";
 import { SkillsSection } from "@/components/skills-section";
 import { ContactForm } from "@/components/contact-form";
 import { Footer } from "@/components/footer";
-import { FloatingGithubButton } from "@/components/floating-github-button";
 
 export default function Home() {
   return (
@@ -20,7 +19,6 @@ export default function Home() {
         <SkillsSection />
         <ContactForm />
       </main>
-      <FloatingGithubButton />
       <Footer />
     </div>
   );

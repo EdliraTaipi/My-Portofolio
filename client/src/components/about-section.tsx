@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
+import { Github } from "lucide-react";
 
 export function AboutSection() {
   const sectionRef = useRef(null);
@@ -36,15 +37,6 @@ export function AboutSection() {
                 alt="Programming"
                 className="absolute inset-0 w-full h-full object-cover"
                 style={{ y }}
-                animate={{ 
-                  scale: [1, 1.1, 1],
-                  rotate: [0, 1, -1, 0]
-                }}
-                transition={{ 
-                  duration: 20,
-                  repeat: Infinity,
-                  repeatType: "reverse"
-                }}
               />
               <motion.div 
                 className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"
@@ -54,21 +46,26 @@ export function AboutSection() {
             </motion.div>
 
             <Card className="md:col-span-1">
-              <CardContent className="p-6 flex items-center justify-center min-h-[300px]">
+              <CardContent className="p-6 flex flex-col items-center justify-center min-h-[300px] space-y-4">
                 <motion.p 
                   className="text-muted-foreground text-center"
                   style={{ opacity }}
-                  animate={{ 
-                    y: [0, -5, 0],
-                  }}
-                  transition={{ 
-                    duration: 3,
-                    repeat: Infinity,
-                    repeatType: "reverse"
-                  }}
                 >
                   I'm a passionate developer with expertise in data analysis, web development, and programming. I strive to create elegant solutions that combine functionality with aesthetic appeal.
                 </motion.p>
+
+                {/* GitHub Button */}
+                <motion.a
+                  href="https://github.com/EdliraTaipi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="github-btn group"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Github className="w-6 h-6 text-[#64ffda] group-hover:text-background transition-colors" />
+                  <span className="ml-2">Check out my GitHub account projects</span>
+                </motion.a>
               </CardContent>
             </Card>
 
@@ -85,16 +82,6 @@ export function AboutSection() {
                 alt="Development"
                 className="absolute inset-0 w-full h-full object-cover"
                 style={{ y: useTransform(scrollYProgress, [0, 1], [-100, 100]) }}
-                animate={{ 
-                  scale: [1, 1.1, 1],
-                  rotate: [0, -1, 1, 0]
-                }}
-                transition={{ 
-                  duration: 20,
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                  delay: 1
-                }}
               />
               <motion.div 
                 className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"
@@ -104,6 +91,27 @@ export function AboutSection() {
             </motion.div>
           </div>
         </motion.div>
+
+        <style jsx>{`
+          .github-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: 2px solid #64ffda;
+            color: #64ffda;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            margin-top: 1rem;
+          }
+
+          .github-btn:hover {
+            background: #64ffda;
+            color: #171717;
+          }
+        `}</style>
       </div>
     </section>
   );
