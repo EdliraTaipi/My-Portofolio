@@ -16,15 +16,15 @@ export function registerRoutes(app: Express): Server {
       const { name, email, message } = contactFormSchema.parse(req.body);
 
       const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || "587"),
-        secure: true, // Changed to true for SSL/TLS
+        host: 'smtp.office365.com',
+        port: 587,
+        secure: false, // STARTTLS for Office 365
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
         },
         tls: {
-          // Do not fail on invalid certs
+          ciphers: 'SSLv3',
           rejectUnauthorized: false
         }
       });
@@ -46,8 +46,6 @@ export function registerRoutes(app: Express): Server {
       res.json({ message: "Message sent successfully" });
     } catch (error) {
       console.error("Contact form error:", error);
-
-      // More detailed error message for debugging
       const errorMessage = error instanceof Error ? error.message : "Failed to send message";
       console.error("Detailed error:", errorMessage);
 
