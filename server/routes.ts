@@ -18,10 +18,14 @@ export function registerRoutes(app: Express): Server {
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT || "587"),
-        secure: false,
+        secure: true, // Changed to true for SSL/TLS
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
+        },
+        tls: {
+          // Do not fail on invalid certs
+          rejectUnauthorized: false
         }
       });
 
@@ -42,10 +46,16 @@ export function registerRoutes(app: Express): Server {
       res.json({ message: "Message sent successfully" });
     } catch (error) {
       console.error("Contact form error:", error);
+
+      // More detailed error message for debugging
+      const errorMessage = error instanceof Error ? error.message : "Failed to send message";
+      console.error("Detailed error:", errorMessage);
+
       res.status(400).json({ 
         message: error instanceof z.ZodError 
           ? "Invalid form data" 
-          : "Failed to send message" 
+          : "Failed to send message",
+        details: errorMessage
       });
     }
   });
