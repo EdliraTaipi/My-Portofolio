@@ -75,28 +75,47 @@ export function ContactForm() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
               className="relative h-[400px] rounded-lg overflow-hidden shadow-xl order-2 md:order-1"
+              whileHover={{ scale: 1.02 }}
             >
               <motion.img
                 src="https://images.pexels.com/photos/5605061/pexels-photo-5605061.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
                 alt="Contact"
                 className="absolute inset-0 w-full h-full object-cover"
                 animate={{ 
-                  scale: [1, 1.05, 1],
-                  rotate: [0, 1, 0]
+                  y: [0, -10, 0],
+                  scale: [1, 1.05, 1]
                 }}
                 transition={{ 
-                  duration: 8,
+                  duration: 4,
                   repeat: Infinity,
                   repeatType: "reverse",
                   ease: "easeInOut"
                 }}
               />
               <motion.div 
-                className="absolute inset-0 bg-[#64ffda]/10 backdrop-blur-[2px]"
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3, duration: 0.5 }}
+                className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent"
+                animate={{
+                  opacity: [0.3, 0.6, 0.3]
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  repeatType: "reverse"
+                }}
+              />
+              {/* Add pulsing circle animation */}
+              <motion.div
+                className="absolute inset-0 border-4 border-primary/50 rounded-lg"
+                animate={{
+                  scale: [1, 1.05, 1],
+                  opacity: [0.5, 0.8, 0.5]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  ease: "easeInOut"
+                }}
               />
             </motion.div>
             <motion.div 
