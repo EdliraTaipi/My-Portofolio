@@ -41,44 +41,127 @@ export function NavigationBar() {
         transition={{ duration: 0.5 }}
       >
         <div className="container mx-auto px-4">
-          <div className="relative flex items-center justify-between py-4">
+          <div className="relative flex flex-col items-center justify-center py-4">
             <motion.h1 
-              className="text-3xl font-bold text-foreground"
+              className="text-3xl font-bold mb-4 text-foreground"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
             >
               Edlira Taipi
             </motion.h1>
-
-            <div className="flex items-center space-x-6">
-              {links.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={(e) => handleScrollToSection(e, link.href)}
-                  className="nav-btn hover:text-primary transition-colors"
+            <div className="nav">
+              <div className="container-nav">
+                {links.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={(e) => handleScrollToSection(e, link.href)}
+                    className="nav-btn"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+                <svg
+                  className="outline"
+                  overflow="visible"
+                  width="400"
+                  height="60"
+                  viewBox="0 0 400 60"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  {link.label}
-                </a>
-              ))}
+                  <rect
+                    className="rect"
+                    pathLength="100"
+                    x="0"
+                    y="0"
+                    width="400"
+                    height="60"
+                    fill="transparent"
+                    strokeWidth="5"
+                  ></rect>
+                </svg>
+              </div>
             </div>
           </div>
         </div>
       </motion.div>
 
       <style jsx>{`
+        .outline {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+
+        .rect {
+          stroke-dashoffset: 5;
+          stroke-dasharray: 0 0 10 40 10 40;
+          transition: 0.5s;
+          stroke: #64ffda;
+        }
+
+        .nav {
+          position: relative;
+          width: 400px;
+          height: 60px;
+          margin: 0 auto;
+        }
+
+        .container-nav:hover .outline .rect {
+          transition: 999999s;
+          stroke-dashoffset: 1;
+          stroke-dasharray: 0;
+        }
+
+        .container-nav {
+          position: absolute;
+          inset: 0;
+          background: #171717;
+          display: flex;
+          flex-direction: row;
+          justify-content: space-around;
+          align-items: center;
+          padding: 0.5em;
+          border-radius: 8px;
+        }
+
         .nav-btn {
           padding: 0.5em 1.5em;
-          color: #ffffff;
+          color: #ccd6f6;
           cursor: pointer;
           transition: 0.1s;
           text-decoration: none;
         }
 
         .nav-btn:hover {
-          background: #666;
-          border-radius: 4px;
+          color: #64ffda;
+        }
+
+        .nav-btn:nth-child(1):hover ~ svg .rect {
+          stroke-dashoffset: 0;
+          stroke-dasharray: 0 2 8 65 8 19;
+        }
+
+        .nav-btn:nth-child(2):hover ~ svg .rect {
+          stroke-dashoffset: 0;
+          stroke-dasharray: 0 12.6 9.5 41.3 9.5 39.6;
+        }
+
+        .nav-btn:nth-child(3):hover ~ svg .rect {
+          stroke-dashoffset: 0;
+          stroke-dasharray: 0 24.5 8.5 19.5 8.5 63.5;
+        }
+
+        .nav-btn:nth-child(4):hover ~ svg .rect {
+          stroke-dashoffset: 0;
+          stroke-dasharray: 0 34.7 6.9 2.2 6.9 84;
+        }
+
+        .nav-btn:hover ~ .outline .rect {
+          stroke-dashoffset: 0;
+          stroke-dasharray: 0 0 10 40 10 40;
+          transition: 0.5s !important;
         }
       `}</style>
     </nav>

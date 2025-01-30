@@ -7,7 +7,7 @@ export function FloatingGithubButton() {
 
   return (
     <motion.div
-      className="fixed bottom-8 right-8 z-50"
+      className="fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-50"
       style={{ opacity, scale }}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
