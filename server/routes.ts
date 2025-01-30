@@ -15,23 +15,41 @@ export function registerRoutes(app: Express): Server {
     try {
       const { name, email, message } = contactFormSchema.parse(req.body);
 
-      const transporter = nodemailer.createTransport({
-        host: 'smtp.office365.com',
+      // Log SMTP configuration (without sensitive data)
+      console.log("Attempting to send email with config:", {
+        host: 'smtp.gmail.com',
         port: 587,
-        secure: false, // STARTTLS for Office 365
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER ? "SET" : "NOT_SET",
+          pass: process.env.SMTP_PASS ? "SET" : "NOT_SET"
+        }
+      });
+
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
         },
-        tls: {
-          ciphers: 'SSLv3',
-          rejectUnauthorized: false
-        }
+        logger: true, // Enable logging
+        debug: true // Include debug info
       });
 
-      await transporter.sendMail({
+      // Verify SMTP connection configuration
+      try {
+        await transporter.verify();
+        console.log("SMTP connection verified successfully");
+      } catch (verifyError: any) {
+        console.error("SMTP Verification failed:", verifyError);
+        throw new Error(`SMTP Verification failed: ${verifyError.message}`);
+      }
+
+      const mailOptions = {
         from: process.env.SMTP_USER,
-        to: "edlira.taipi@hotmail.com",
+        to: process.env.SMTP_USER,
         subject: `Portfolio Contact: ${name}`,
         text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
         html: `
@@ -41,19 +59,38 @@ export function registerRoutes(app: Express): Server {
           <p><strong>Message:</strong></p>
           <p>${message}</p>
         `
+      };
+
+      // Log mail options (without sensitive data)
+      console.log("Attempting to send email with options:", {
+        ...mailOptions,
+        from: "HIDDEN",
+        to: "HIDDEN"
       });
 
-      res.json({ message: "Message sent successfully" });
-    } catch (error) {
-      console.error("Contact form error:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to send message";
-      console.error("Detailed error:", errorMessage);
+      const info = await transporter.sendMail(mailOptions);
+      console.log("Email sent successfully:", info.messageId);
 
-      res.status(400).json({ 
+      res.json({ 
+        message: "Message sent successfully",
+        messageId: info.messageId 
+      });
+    } catch (error: any) {
+      console.error("Contact form detailed error:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        code: error.code
+      });
+
+      const errorMessage = error instanceof Error ? error.message : "Failed to send message";
+
+      res.status(500).json({ 
         message: error instanceof z.ZodError 
           ? "Invalid form data" 
           : "Failed to send message",
-        details: errorMessage
+        details: errorMessage,
+        errorCode: error.code || 'UNKNOWN'
       });
     }
   });

@@ -54,7 +54,6 @@ export function AboutSection() {
                   I'm a passionate developer with expertise in data analysis, web development, and programming. I strive to create elegant solutions that combine functionality with aesthetic appeal.
                 </motion.p>
 
-                {/* GitHub Button */}
                 <motion.a
                   href="https://github.com/EdliraTaipi"
                   target="_blank"
@@ -91,8 +90,10 @@ export function AboutSection() {
             </motion.div>
           </div>
         </motion.div>
+      </div>
 
-        <style jsx>{`
+      <style>
+        {`
           .github-btn {
             display: inline-flex;
             align-items: center;
@@ -111,8 +112,8 @@ export function AboutSection() {
             background: #64ffda;
             color: #171717;
           }
-        `}</style>
-      </div>
+        `}
+      </style>
     </section>
   );
 }

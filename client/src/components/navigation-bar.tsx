@@ -86,84 +86,85 @@ export function NavigationBar() {
           </div>
         </div>
       </motion.div>
+      <style>
+        {`
+          .outline {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+          }
 
-      <style jsx>{`
-        .outline {
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-        }
+          .rect {
+            stroke-dashoffset: 5;
+            stroke-dasharray: 0 0 10 40 10 40;
+            transition: 0.5s;
+            stroke: #64ffda;
+          }
 
-        .rect {
-          stroke-dashoffset: 5;
-          stroke-dasharray: 0 0 10 40 10 40;
-          transition: 0.5s;
-          stroke: #64ffda;
-        }
+          .nav {
+            position: relative;
+            width: 400px;
+            height: 60px;
+            margin: 0 auto;
+          }
 
-        .nav {
-          position: relative;
-          width: 400px;
-          height: 60px;
-          margin: 0 auto;
-        }
+          .container-nav:hover .outline .rect {
+            transition: 999999s;
+            stroke-dashoffset: 1;
+            stroke-dasharray: 0;
+          }
 
-        .container-nav:hover .outline .rect {
-          transition: 999999s;
-          stroke-dashoffset: 1;
-          stroke-dasharray: 0;
-        }
+          .container-nav {
+            position: absolute;
+            inset: 0;
+            background: #171717;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0.5em;
+            border-radius: 8px;
+          }
 
-        .container-nav {
-          position: absolute;
-          inset: 0;
-          background: #171717;
-          display: flex;
-          flex-direction: row;
-          justify-content: space-around;
-          align-items: center;
-          padding: 0.5em;
-          border-radius: 8px;
-        }
+          .nav-btn {
+            padding: 0.5em 1.5em;
+            color: #ccd6f6;
+            cursor: pointer;
+            transition: 0.1s;
+            text-decoration: none;
+          }
 
-        .nav-btn {
-          padding: 0.5em 1.5em;
-          color: #ccd6f6;
-          cursor: pointer;
-          transition: 0.1s;
-          text-decoration: none;
-        }
+          .nav-btn:hover {
+            color: #64ffda;
+          }
 
-        .nav-btn:hover {
-          color: #64ffda;
-        }
+          .nav-btn:nth-child(1):hover ~ svg .rect {
+            stroke-dashoffset: 0;
+            stroke-dasharray: 0 2 8 65 8 19;
+          }
 
-        .nav-btn:nth-child(1):hover ~ svg .rect {
-          stroke-dashoffset: 0;
-          stroke-dasharray: 0 2 8 65 8 19;
-        }
+          .nav-btn:nth-child(2):hover ~ svg .rect {
+            stroke-dashoffset: 0;
+            stroke-dasharray: 0 12.6 9.5 41.3 9.5 39.6;
+          }
 
-        .nav-btn:nth-child(2):hover ~ svg .rect {
-          stroke-dashoffset: 0;
-          stroke-dasharray: 0 12.6 9.5 41.3 9.5 39.6;
-        }
+          .nav-btn:nth-child(3):hover ~ svg .rect {
+            stroke-dashoffset: 0;
+            stroke-dasharray: 0 24.5 8.5 19.5 8.5 63.5;
+          }
 
-        .nav-btn:nth-child(3):hover ~ svg .rect {
-          stroke-dashoffset: 0;
-          stroke-dasharray: 0 24.5 8.5 19.5 8.5 63.5;
-        }
+          .nav-btn:nth-child(4):hover ~ svg .rect {
+            stroke-dashoffset: 0;
+            stroke-dasharray: 0 34.7 6.9 2.2 6.9 84;
+          }
 
-        .nav-btn:nth-child(4):hover ~ svg .rect {
-          stroke-dashoffset: 0;
-          stroke-dasharray: 0 34.7 6.9 2.2 6.9 84;
-        }
-
-        .nav-btn:hover ~ .outline .rect {
-          stroke-dashoffset: 0;
-          stroke-dasharray: 0 0 10 40 10 40;
-          transition: 0.5s !important;
-        }
-      `}</style>
+          .nav-btn:hover ~ .outline .rect {
+            stroke-dashoffset: 0;
+            stroke-dasharray: 0 0 10 40 10 40;
+            transition: 0.5s !important;
+          }
+        `}
+      </style>
     </nav>
   );
 }
