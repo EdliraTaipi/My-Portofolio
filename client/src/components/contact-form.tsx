@@ -1,19 +1,61 @@
 import { motion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const contactFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email format"),
+  message: z.string().min(1, "Message is required")
+});
 
 export function ContactForm() {
   const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: ""
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Message sent!",
-      description: "Thank you for reaching out. I'll get back to you soon.",
-    });
+    setIsSubmitting(true);
+
+    try {
+      const validatedData = contactFormSchema.parse(formData);
+
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(validatedData),
+      });
+
+      if (!response.ok) throw new Error("Failed to send message");
+
+      toast({
+        title: "Message sent!",
+        description: "Thank you for reaching out. I'll get back to you soon.",
+      });
+
+      setFormData({ name: "", email: "", message: "" });
+    } catch (error) {
+      console.error("Contact form error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -67,20 +109,48 @@ export function ContactForm() {
                 <form onSubmit={handleSubmit} className="form">
                   <p className="form-heading text-center text-xl mb-6">Get In Touch</p>
                   <div className="form-field">
-                    <input required placeholder="Name" className="input-field" type="text" />
+                    <input
+                      required
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Name"
+                      className="input-field"
+                      type="text"
+                    />
                   </div>
                   <div className="form-field">
-                    <input required placeholder="Email" className="input-field" type="email" />
+                    <input
+                      required
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="Email"
+                      className="input-field"
+                      type="email"
+                    />
                   </div>
                   <div className="form-field">
-                    <textarea required placeholder="Message" className="input-field" rows={3} />
+                    <textarea
+                      required
+                      name="message"
+                      value={formData.message}
+                      onChange={handleChange}
+                      placeholder="Message"
+                      className="input-field"
+                      rows={3}
+                    />
                   </div>
                   <motion.div
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <button type="submit" className="sendMessage-btn w-full">
-                      Send Message
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className={`sendMessage-btn w-full ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {isSubmitting ? 'Sending...' : 'Send Message'}
                     </button>
                   </motion.div>
                 </form>
@@ -157,7 +227,7 @@ export function ContactForm() {
           transition: all ease-in-out 0.3s;
         }
 
-        .sendMessage-btn:hover {
+        .sendMessage-btn:hover:not(:disabled) {
           transition: all ease-in-out 0.3s;
           background-color: #64ffda;
           color: #000;
