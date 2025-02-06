@@ -1,6 +1,40 @@
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { IconType } from "react-icons";
+import { 
+  SiPython, 
+  SiJavascript, 
+  SiPhp, 
+  SiMysql, 
+  SiAngular, 
+  SiTailwindcss, 
+  SiNodedotjs, 
+  SiTableau, 
+  SiGooglebigquery, 
+  SiHtml5, 
+  SiCss3, 
+  SiBootstrap, 
+  SiJquery, 
+  SiApachehadoop 
+} from "react-icons/si";
+
+const skillIcons: { [key: string]: IconType } = {
+  Python: SiPython,
+  JavaScript: SiJavascript,
+  PHP: SiPhp,
+  SQL: SiMysql,
+  Angular: SiAngular,
+  TailwindCSS: SiTailwindcss,
+  "Node.js": SiNodedotjs,
+  Tableau: SiTableau,
+  BigQuery: SiGooglebigquery,
+  HTML: SiHtml5,
+  CSS: SiCss3,
+  Bootstrap: SiBootstrap,
+  jQuery: SiJquery,
+  Hadoop: SiApachehadoop
+};
 
 export function SkillsSection() {
   const skillCategories = [
@@ -14,11 +48,11 @@ export function SkillsSection() {
     },
     {
       title: "Web Development",
-      skills: ["HTML", "CSS", "Bootstrap", "jQuery", "DOM Manipulation"]
+      skills: ["HTML", "CSS", "Bootstrap", "jQuery"]
     },
     {
       title: "Data Science & Analytics",
-      skills: ["Data visualization", "Machine learning", "BigQuery", "Tableau", "PowerQuery", "PowerPivot", "SQL Server", "Hadoop"]
+      skills: ["BigQuery", "Tableau", "Hadoop"]
     }
   ];
 
@@ -48,26 +82,30 @@ export function SkillsSection() {
                     </h3>
                   </CardHeader>
                   <CardContent className="flex flex-wrap gap-2">
-                    {category.skills.map((skill, skillIndex) => (
-                      <motion.div
-                        key={skill}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{
-                          delay: categoryIndex * 0.1 + skillIndex * 0.05,
-                          duration: 0.3
-                        }}
-                        whileHover={{ scale: 1.05 }}
-                      >
-                        <Badge 
-                          variant="secondary" 
-                          className="text-sm px-3 py-1"
+                    {category.skills.map((skill, skillIndex) => {
+                      const Icon = skillIcons[skill];
+                      return (
+                        <motion.div
+                          key={skill}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          whileInView={{ opacity: 1, scale: 1 }}
+                          viewport={{ once: true }}
+                          transition={{
+                            delay: categoryIndex * 0.1 + skillIndex * 0.05,
+                            duration: 0.3
+                          }}
+                          whileHover={{ scale: 1.05 }}
                         >
-                          {skill}
-                        </Badge>
-                      </motion.div>
-                    ))}
+                          <Badge 
+                            variant="secondary" 
+                            className="text-sm px-3 py-1 flex items-center gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
+                          >
+                            <Icon className="w-4 h-4" />
+                            {skill}
+                          </Badge>
+                        </motion.div>
+                      );
+                    })}
                   </CardContent>
                 </Card>
               </motion.div>
