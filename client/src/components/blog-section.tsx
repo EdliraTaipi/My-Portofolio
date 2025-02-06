@@ -12,113 +12,63 @@ import { useState } from "react";
 import { X, MessageCircle } from "lucide-react";
 import { BlogChat } from "./blog-chat";
 import { useQuery } from "@tanstack/react-query";
+import { Octokit } from "@octokit/rest";
 
-interface DevToArticle {
+interface Repository {
   id: number;
-  title: string;
+  name: string;
   description: string;
-  published_at: string;
-  tags: string[];
-  url: string;
-  reading_time_minutes: number;
-  body_html: string;
-  user: {
-    name: string;
-  }
+  created_at: string;
+  topics: string[];
+  html_url: string;
+  homepage: string;
+  language: string;
+  readme?: string;
 }
 
-interface BlogPost {
-  id: string;
-  title: string;
-  date: string;
-  excerpt: string;
-  category: string;
-  readTime: string;
-  content?: string;
-  url?: string;
-  author?: string;
-}
+const octokit = new Octokit();
 
-// Default blog posts as fallback
-const defaultPosts: BlogPost[] = [
-  {
-    id: "1",
-    title: "Getting Started with Web Development",
-    date: "February 6, 2025",
-    excerpt: "A comprehensive guide to modern web development practices and tools",
-    category: "Web Development",
-    readTime: "5 min read",
-    content: "Welcome to web development! This guide will help you get started...",
-    author: "Edlira Taipi"
-  },
-  {
-    id: "2",
-    title: "Understanding Data Structures",
-    date: "February 5, 2025",
-    excerpt: "Learn about fundamental data structures and their implementations",
-    category: "Programming",
-    readTime: "7 min read",
-    content: "Data structures are fundamental to computer science...",
-    author: "Edlira Taipi"
-  }
-];
-
-const fetchDevToPosts = async (): Promise<BlogPost[]> => {
+const fetchGitHubRepositories = async (): Promise<Repository[]> => {
   try {
-    // First try with the username
-    const response = await fetch('https://dev.to/api/articles?username=edlirataipi');
+    // Fetch repositories
+    const { data: repos } = await octokit.repos.listForUser({
+      username: 'EdliraTaipi',
+      sort: 'updated',
+      per_page: 9
+    });
 
-    if (!response.ok) {
-      console.error('Dev.to API error:', await response.text());
-      throw new Error('Failed to fetch blog posts');
-    }
+    // Fetch README content for each repository
+    const reposWithReadme = await Promise.all(
+      repos.map(async (repo) => {
+        try {
+          const { data: readme } = await octokit.repos.getReadme({
+            owner: 'EdliraTaipi',
+            repo: repo.name,
+          });
 
-    const articles: DevToArticle[] = await response.json();
+          const readmeContent = Buffer.from(readme.content, 'base64').toString('utf-8');
+          return { ...repo, readme: readmeContent };
+        } catch (error) {
+          console.log(`No README found for ${repo.name}`);
+          return repo;
+        }
+      })
+    );
 
-    // If no articles found, try searching for your posts
-    if (articles.length === 0) {
-      const searchResponse = await fetch('https://dev.to/api/articles/latest?tag=webdev&top=7');
-      if (!searchResponse.ok) {
-        throw new Error('Failed to fetch featured posts');
-      }
-      articles.push(...(await searchResponse.json()));
-    }
-
-    // If still no articles, return default posts
-    if (articles.length === 0) {
-      console.log('No articles found, using default posts');
-      return defaultPosts;
-    }
-
-    return articles.map(article => ({
-      id: article.id.toString(),
-      title: article.title,
-      date: new Date(article.published_at).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      }),
-      excerpt: article.description || "Click to read more...",
-      category: article.tags?.[0] || 'General',
-      readTime: `${article.reading_time_minutes || 5} min read`,
-      content: article.body_html,
-      url: article.url,
-      author: article.user?.name || "Edlira Taipi"
-    }));
+    return reposWithReadme;
   } catch (error) {
-    console.error('Error fetching posts:', error);
-    return defaultPosts;
+    console.error('Error fetching repositories:', error);
+    return [];
   }
 };
 
 export function BlogSection() {
-  const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [selectedPost, setSelectedPost] = useState<Repository | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  const { data: blogPosts, isLoading } = useQuery({
-    queryKey: ['blog-posts'],
-    queryFn: fetchDevToPosts,
-    initialData: defaultPosts
+  const { data: repositories, isLoading } = useQuery({
+    queryKey: ['github-blogs'],
+    queryFn: fetchGitHubRepositories
   });
 
   return (
@@ -130,7 +80,7 @@ export function BlogSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-3xl font-bold mb-8 text-center">Latest Blog Posts</h2>
+          <h2 className="text-3xl font-bold mb-8 text-center">Latest Projects & Articles</h2>
 
           {isLoading ? (
             <div className="grid md:grid-cols-3 gap-8">
@@ -151,9 +101,9 @@ export function BlogSection() {
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-8">
-              {blogPosts?.map((post, index) => (
+              {repositories?.map((repo, index) => (
                 <motion.div
-                  key={post.id}
+                  key={repo.id}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -162,19 +112,31 @@ export function BlogSection() {
                   <Card className="h-full hover:shadow-lg transition-shadow duration-300">
                     <CardHeader>
                       <div className="flex justify-between items-start mb-2">
-                        <Badge variant="secondary">{post.category}</Badge>
-                        <span className="text-sm text-muted-foreground">{post.readTime}</span>
+                        <Badge variant="secondary">{repo.language || 'Project'}</Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(repo.created_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </span>
                       </div>
-                      <h3 className="text-xl font-semibold leading-tight mb-2">{post.title}</h3>
-                      <p className="text-sm text-muted-foreground">{post.date}</p>
+                      <h3 className="text-xl font-semibold leading-tight mb-2">{repo.name}</h3>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground mb-4">{post.excerpt}</p>
+                      <p className="text-muted-foreground mb-4">{repo.description || 'Click to read more...'}</p>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {repo.topics?.map((topic) => (
+                          <Badge key={topic} variant="outline">
+                            {topic}
+                          </Badge>
+                        ))}
+                      </div>
                       <div className="flex gap-4">
                         <Button 
                           variant="link" 
                           className="p-0 h-auto font-semibold hover:text-primary transition-colors"
-                          onClick={() => setSelectedPost(post)}
+                          onClick={() => setSelectedPost(repo)}
                         >
                           Read More →
                         </Button>
@@ -193,37 +155,44 @@ export function BlogSection() {
             <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold mb-2">
-                  {selectedPost?.title}
+                  {selectedPost?.name}
                 </DialogTitle>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                  <Badge variant="secondary">{selectedPost?.category}</Badge>
-                  <span>{selectedPost?.date}</span>
-                  <span>·</span>
-                  <span>{selectedPost?.readTime}</span>
-                  {selectedPost?.author && (
-                    <>
-                      <span>·</span>
-                      <span>By {selectedPost.author}</span>
-                    </>
-                  )}
+                  <Badge variant="secondary">{selectedPost?.language || 'Project'}</Badge>
+                  <span>
+                    {selectedPost && new Date(selectedPost.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
                 </div>
               </DialogHeader>
               <div className="flex gap-8">
                 <div className="flex-1">
-                  <div 
-                    className="prose prose-neutral dark:prose-invert"
-                    dangerouslySetInnerHTML={{ 
-                      __html: selectedPost?.content || 'No content available.'
-                    }}
-                  />
-                  {selectedPost?.url && (
-                    <div className="mt-4">
+                  <div className="prose prose-neutral dark:prose-invert">
+                    {selectedPost?.readme ? (
+                      <div dangerouslySetInnerHTML={{ __html: selectedPost.readme }} />
+                    ) : (
+                      <p>{selectedPost?.description || 'No description available.'}</p>
+                    )}
+                  </div>
+                  {selectedPost?.html_url && (
+                    <div className="mt-4 space-x-4">
                       <Button
                         variant="outline"
-                        onClick={() => window.open(selectedPost.url, '_blank')}
+                        onClick={() => window.open(selectedPost.html_url, '_blank')}
                       >
-                        Read on Dev.to →
+                        View on GitHub →
                       </Button>
+                      {selectedPost.homepage && (
+                        <Button
+                          variant="outline"
+                          onClick={() => window.open(selectedPost.homepage, '_blank')}
+                        >
+                          View Live Demo →
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -239,7 +208,7 @@ export function BlogSection() {
                   </Button>
                   {selectedPost && (
                     <BlogChat
-                      postId={selectedPost.id}
+                      postId={selectedPost.id.toString()}
                       isOpen={isChatOpen}
                     />
                   )}
