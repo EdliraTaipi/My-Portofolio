@@ -28,7 +28,13 @@ const parser = new Parser();
 
 const fetchGitHubBlogPosts = async (): Promise<BlogPost[]> => {
   try {
-    const feed = await parser.parseURL('https://github.blog/news-insights/feed/');
+    const response = await fetch('/api/github-blog');
+    if (!response.ok) {
+      throw new Error('Failed to fetch blog posts');
+    }
+    const xmlData = await response.text();
+    const feed = await parser.parseString(xmlData);
+
     return feed.items.map((item, index) => ({
       id: item.guid || String(index),
       title: item.title || 'Untitled',

@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import nodemailer from "nodemailer";
 import { z } from "zod";
 import { WebSocketServer, WebSocket } from 'ws';
+import fetch from 'node-fetch';
 
 const contactFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -207,6 +208,24 @@ export function registerRoutes(app: Express): Server {
           : "Failed to send message",
         details: error.message,
         errorCode: error.code || 'UNKNOWN'
+      });
+    }
+  });
+
+  // Add GitHub blog feed endpoint
+  app.get("/api/github-blog", async (req, res) => {
+    try {
+      const response = await fetch('https://github.blog/news-insights/feed/');
+      if (!response.ok) {
+        throw new Error('Failed to fetch GitHub blog feed');
+      }
+      const data = await response.text();
+      res.send(data);
+    } catch (error) {
+      console.error('Error fetching GitHub blog feed:', error);
+      res.status(500).json({
+        error: 'Failed to fetch blog posts',
+        details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });
