@@ -31,32 +31,32 @@ export function registerRoutes(app: Express): Server {
 
       if (emailDomain === 'gmail.com') {
         smtpConfig = {
-          host: "smtp.gmail.com",
-          port: 587,
-          secure: false,
-          requireTLS: true,
+          service: 'gmail',
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+          }
         };
       } else if (emailDomain === 'hotmail.com' || emailDomain === 'outlook.com') {
         smtpConfig = {
-          host: "smtp-mail.outlook.com",
+          host: 'smtp.office365.com',
           port: 587,
           secure: false,
-          requireTLS: true,
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+          },
+          tls: {
+            ciphers: 'SSLv3',
+            rejectUnauthorized: false
+          }
         };
       } else {
         throw new Error(`Unsupported email provider: ${emailDomain}. Please use either Gmail or Hotmail/Outlook.`);
       }
 
       // Create reusable transporter object using SMTP transport
-      const transporter = nodemailer.createTransport({
-        ...smtpConfig,
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS
-        },
-        debug: true,
-        logger: true
-      });
+      const transporter = nodemailer.createTransport(smtpConfig);
 
       // Verify SMTP connection configuration
       try {
@@ -85,8 +85,12 @@ export function registerRoutes(app: Express): Server {
           } else {
             throw new Error(
               "Hotmail/Outlook authentication failed. Please ensure you're using:\n" +
-              "1. Your correct email address\n" +
-              "2. Your account password or an app password if you have 2FA enabled"
+              "1. Your Microsoft account email\n" +
+              "2. Your account App Password (regular password won't work)\n" +
+              "To generate an App Password:\n" +
+              "1. Go to account.microsoft.com/security\n" +
+              "2. Enable 2-Step Verification if not enabled\n" +
+              "3. Generate an App Password for this application"
             );
           }
         }
