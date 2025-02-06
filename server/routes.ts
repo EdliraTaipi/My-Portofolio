@@ -15,27 +15,20 @@ export function registerRoutes(app: Express): Server {
     try {
       const { name, email, message } = contactFormSchema.parse(req.body);
 
-      // Log SMTP configuration (without sensitive data)
-      console.log("Attempting to send email with config:", {
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
-        auth: {
-          user: process.env.SMTP_USER ? "SET" : "NOT_SET",
-          pass: process.env.SMTP_PASS ? "SET" : "NOT_SET"
-        }
-      });
-
+      // Create reusable transporter object using SMTP transport
       const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 587,
-        secure: false,
+        secure: false, // true for 465, false for other ports
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
         },
         logger: true, // Enable logging
-        debug: true // Include debug info
+        debug: true, // Include debug info
+        tls: {
+          rejectUnauthorized: false // Accept self-signed certificates
+        }
       });
 
       // Verify SMTP connection configuration
@@ -48,21 +41,25 @@ export function registerRoutes(app: Express): Server {
       }
 
       const mailOptions = {
-        from: process.env.SMTP_USER,
+        from: `"Portfolio Contact Form" <${process.env.SMTP_USER}>`,
         to: process.env.SMTP_USER,
         subject: `Portfolio Contact: ${name}`,
         text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
         html: `
-          <h2>New Contact Form Submission</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Message:</strong></p>
-          <p>${message}</p>
+          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">New Contact Form Submission</h2>
+            <div style="background: #f5f5f5; padding: 15px; border-radius: 5px;">
+              <p><strong>Name:</strong> ${name}</p>
+              <p><strong>Email:</strong> ${email}</p>
+              <p><strong>Message:</strong></p>
+              <p style="white-space: pre-wrap;">${message}</p>
+            </div>
+          </div>
         `
       };
 
       // Log mail options (without sensitive data)
-      console.log("Attempting to send email with options:", {
+      console.log("Sending email with options:", {
         ...mailOptions,
         from: "HIDDEN",
         to: "HIDDEN"
