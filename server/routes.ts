@@ -27,11 +27,12 @@ export function registerRoutes(app: Express): Server {
         throw new Error("SMTP configuration is incomplete");
       }
 
-      // Configure SMTP transport with explicit security settings
+      // Configure SMTP transport with explicit security settings for Gmail
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT),
-        secure: true, // use SSL/TLS
+        port: 587, // Use 587 for TLS
+        secure: false, // Use STARTTLS
+        requireTLS: true, // Require TLS
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
@@ -60,7 +61,7 @@ export function registerRoutes(app: Express): Server {
           address: process.env.SMTP_USER
         },
         replyTo: {
-          name: "Edlira Taipi",
+          name: name,
           address: email // Use the sender's email for replies
         },
         to: process.env.SMTP_USER,
