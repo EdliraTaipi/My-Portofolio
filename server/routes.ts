@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import nodemailer from "nodemailer";
 import { z } from "zod";
-import sgMail from '@sendgrid/mail';
 
 const contactFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -15,23 +15,55 @@ export function registerRoutes(app: Express): Server {
     try {
       const { name, email, message } = contactFormSchema.parse(req.body);
 
-      if (!process.env.SENDGRID_API_KEY) {
-        throw new Error("SendGrid API key is not configured");
+      // Log environment variables status (without exposing values)
+      console.log("Starting email sending process with config:", {
+        SMTP_HOST_SET: !!process.env.SMTP_HOST,
+        SMTP_USER_SET: !!process.env.SMTP_USER,
+        SMTP_PASS_SET: !!process.env.SMTP_PASS,
+        SMTP_PORT_SET: !!process.env.SMTP_PORT
+      });
+
+      if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.SMTP_PORT) {
+        throw new Error("SMTP configuration is incomplete");
       }
 
-      // Initialize SendGrid
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      // Configure SMTP transport with explicit security settings
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT),
+        secure: true, // use SSL/TLS
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        },
+        debug: true, // Enable debug logging
+        logger: true  // Log to console
+      });
 
-      const msg = {
-        to: process.env.SMTP_USER, // Your email address
+      // Verify SMTP connection configuration
+      try {
+        console.log("Attempting to verify SMTP connection...");
+        await transporter.verify();
+        console.log("SMTP connection verified successfully");
+      } catch (verifyError: any) {
+        console.error("SMTP Verification error details:", {
+          code: verifyError.code,
+          response: verifyError.response,
+          message: verifyError.message
+        });
+        throw new Error(`SMTP Verification failed: ${verifyError.message}`);
+      }
+
+      const mailOptions = {
         from: {
-          email: process.env.SMTP_USER, // Must be verified with SendGrid
-          name: "Portfolio Contact Form"
+          name: "Portfolio Contact Form",
+          address: process.env.SMTP_USER
         },
         replyTo: {
-          email: process.env.SMTP_USER,
-          name: "Edlira Taipi"
+          name: "Edlira Taipi",
+          address: email // Use the sender's email for replies
         },
+        to: process.env.SMTP_USER,
         subject: `Portfolio Contact: ${name}`,
         text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
         html: `
@@ -48,20 +80,24 @@ export function registerRoutes(app: Express): Server {
       };
 
       try {
-        console.log("Attempting to send email via SendGrid...");
-        await sgMail.send(msg);
-        console.log("Email sent successfully via SendGrid");
+        console.log("Attempting to send email...");
+        const info = await transporter.sendMail(mailOptions);
+        console.log("Email sent successfully:", {
+          messageId: info.messageId,
+          response: info.response,
+          accepted: info.accepted,
+          rejected: info.rejected
+        });
 
         res.json({
           message: "Message sent successfully"
         });
       } catch (sendError: any) {
-        console.error("SendGrid error details:", {
+        console.error("Email sending error details:", {
           code: sendError.code,
-          response: sendError.response?.body,
+          response: sendError.response,
           message: sendError.message
         });
-
         throw new Error(`Failed to send email: ${sendError.message}`);
       }
     } catch (error: any) {
