@@ -9,7 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, MessageCircle } from "lucide-react";
+import { BlogChat } from "./blog-chat";
 
 interface BlogPost {
   id: string;
@@ -77,6 +78,7 @@ const blogPosts: BlogPost[] = [
 
 export function BlogSection() {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   return (
     <section id="blog" className="py-20 bg-muted/50">
@@ -108,21 +110,26 @@ export function BlogSection() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground mb-4">{post.excerpt}</p>
-                    <Button 
-                      variant="link" 
-                      className="p-0 h-auto font-semibold hover:text-primary transition-colors"
-                      onClick={() => setSelectedPost(post)}
-                    >
-                      Read More →
-                    </Button>
+                    <div className="flex gap-4">
+                      <Button 
+                        variant="link" 
+                        className="p-0 h-auto font-semibold hover:text-primary transition-colors"
+                        onClick={() => setSelectedPost(post)}
+                      >
+                        Read More →
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
           </div>
 
-          <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <Dialog open={!!selectedPost} onOpenChange={() => {
+            setSelectedPost(null);
+            setIsChatOpen(false);
+          }}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold mb-2">
                   {selectedPost?.title}
@@ -134,18 +141,42 @@ export function BlogSection() {
                   <span>{selectedPost?.readTime}</span>
                 </div>
               </DialogHeader>
-              <div className="mt-4 prose prose-neutral dark:prose-invert">
-                {selectedPost?.content?.split('\n').map((paragraph, index) => (
-                  <p key={index} className="mb-4">
-                    {paragraph.trim()}
-                  </p>
-                ))}
+              <div className="flex gap-8">
+                <div className="flex-1">
+                  <div className="prose prose-neutral dark:prose-invert">
+                    {selectedPost?.content?.split('\n').map((paragraph, index) => (
+                      <p key={index} className="mb-4">
+                        {paragraph.trim()}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="w-80 flex flex-col">
+                  <Button
+                    variant="outline"
+                    className="mb-4 gap-2"
+                    onClick={() => setIsChatOpen(!isChatOpen)}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    {isChatOpen ? 'Close Chat' : 'Join Discussion'}
+                  </Button>
+                  {selectedPost && (
+                    <BlogChat
+                      postId={selectedPost.id}
+                      isOpen={isChatOpen}
+                    />
+                  )}
+                </div>
               </div>
               <Button
                 className="absolute right-4 top-4"
                 variant="ghost"
                 size="icon"
-                onClick={() => setSelectedPost(null)}
+                onClick={() => {
+                  setSelectedPost(null);
+                  setIsChatOpen(false);
+                }}
               >
                 <X className="h-4 w-4" />
               </Button>

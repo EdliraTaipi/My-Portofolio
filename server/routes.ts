@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import nodemailer from "nodemailer";
 import { z } from "zod";
+import { WebSocketServer, WebSocket } from 'ws';
 
 const contactFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -9,7 +10,101 @@ const contactFormSchema = z.object({
   message: z.string().min(1, "Message is required")
 });
 
+interface ChatMessage {
+  type: 'chat';
+  postId: string;
+  username: string;
+  message: string;
+  timestamp: number;
+}
+
+interface ChatClient extends WebSocket {
+  username?: string;
+  postId?: string;
+}
+
 export function registerRoutes(app: Express): Server {
+  const httpServer = createServer(app);
+
+  // Initialize WebSocket server
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+
+  // Store active chat rooms (postId -> Set of clients)
+  const chatRooms = new Map<string, Set<ChatClient>>();
+
+  wss.on('connection', (ws: ChatClient) => {
+    console.log('New WebSocket connection established');
+
+    ws.on('message', (data: string) => {
+      try {
+        const message = JSON.parse(data);
+
+        switch (message.type) {
+          case 'join':
+            // Join chat room for specific post
+            ws.username = message.username;
+            ws.postId = message.postId;
+
+            if (!chatRooms.has(message.postId)) {
+              chatRooms.set(message.postId, new Set());
+            }
+            chatRooms.get(message.postId)?.add(ws);
+
+            // Notify others in the room
+            const joinMessage = {
+              type: 'system',
+              message: `${message.username} joined the chat`,
+              timestamp: Date.now()
+            };
+            broadcastToRoom(message.postId, joinMessage);
+            break;
+
+          case 'chat':
+            if (ws.postId && ws.username) {
+              const chatMessage: ChatMessage = {
+                type: 'chat',
+                postId: ws.postId,
+                username: ws.username,
+                message: message.message,
+                timestamp: Date.now()
+              };
+              broadcastToRoom(ws.postId, chatMessage);
+            }
+            break;
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    });
+
+    ws.on('close', () => {
+      if (ws.postId && ws.username) {
+        // Remove from chat room
+        chatRooms.get(ws.postId)?.delete(ws);
+
+        // Notify others
+        const leaveMessage = {
+          type: 'system',
+          message: `${ws.username} left the chat`,
+          timestamp: Date.now()
+        };
+        broadcastToRoom(ws.postId, leaveMessage);
+      }
+    });
+  });
+
+  function broadcastToRoom(postId: string, message: any) {
+    const room = chatRooms.get(postId);
+    if (room) {
+      const messageStr = JSON.stringify(message);
+      room.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(messageStr);
+        }
+      });
+    }
+  }
+
   // Contact form endpoint
   app.post("/api/contact", async (req, res) => {
     try {
@@ -27,21 +122,19 @@ export function registerRoutes(app: Express): Server {
         throw new Error("SMTP configuration is incomplete");
       }
 
-      // Configure SMTP transport with explicit security settings for Gmail
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
-        port: 587, // Use 587 for TLS
-        secure: false, // Use STARTTLS
-        requireTLS: true, // Require TLS
+        port: 587,
+        secure: false,
+        requireTLS: true,
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
         },
-        debug: true, // Enable debug logging
-        logger: true  // Log to console
+        debug: true,
+        logger: true
       });
 
-      // Verify SMTP connection configuration
       try {
         console.log("Attempting to verify SMTP connection...");
         await transporter.verify();
@@ -62,7 +155,7 @@ export function registerRoutes(app: Express): Server {
         },
         replyTo: {
           name: name,
-          address: email // Use the sender's email for replies
+          address: email
         },
         to: process.env.SMTP_USER,
         subject: `Portfolio Contact: ${name}`,
@@ -118,6 +211,5 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  const httpServer = createServer(app);
   return httpServer;
 }
