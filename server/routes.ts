@@ -16,27 +16,31 @@ export function registerRoutes(app: Express): Server {
       const { name, email, message } = contactFormSchema.parse(req.body);
 
       // Log environment variables status (without exposing values)
-      console.log("Environment variables status:", {
-        SMTP_USER: process.env.SMTP_USER ? "Set" : "Not set",
-        SMTP_PASS: process.env.SMTP_PASS ? "Set" : "Not set"
+      console.log("Starting email sending process with config:", {
+        SMTP_USER_SET: !!process.env.SMTP_USER,
+        SMTP_PASS_SET: !!process.env.SMTP_PASS
       });
 
       if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
         throw new Error("SMTP credentials are not properly configured");
       }
 
-      // Configure Gmail SMTP transport
+      // Configure Gmail SMTP transport with explicit security settings
       const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true, // use SSL
         auth: {
           user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS // This should be an App Password for Gmail
-        }
+          pass: process.env.SMTP_PASS
+        },
+        debug: true, // Enable debug logging
+        logger: true  // Log to console
       });
 
       // Verify SMTP connection configuration
       try {
-        console.log("Verifying SMTP connection...");
+        console.log("Attempting to verify SMTP connection...");
         await transporter.verify();
         console.log("SMTP connection verified successfully");
       } catch (verifyError: any) {
@@ -45,23 +49,32 @@ export function registerRoutes(app: Express): Server {
           response: verifyError.response,
           responseCode: verifyError.responseCode,
           command: verifyError.command,
-          message: verifyError.message,
-          stack: verifyError.stack
+          message: verifyError.message
         });
 
         if (verifyError.responseCode === 535) {
           throw new Error(
-            "Gmail authentication failed. Please ensure you're using:\n" +
-            "1. A Gmail account\n" +
-            "2. An App Password (not your regular Gmail password)\n" +
-            "You can generate an App Password in your Gmail Account Settings → Security → 2-Step Verification → App Passwords"
+            "Gmail authentication failed. Please ensure:\n" +
+            "1. You're using a Gmail account\n" +
+            "2. 2-Step Verification is enabled in your Google Account\n" +
+            "3. You're using an App Password (16 characters)\n" +
+            "4. The App Password was generated specifically for this application\n\n" +
+            "To fix this:\n" +
+            "1. Go to Google Account Settings > Security\n" +
+            "2. Enable 2-Step Verification if not enabled\n" +
+            "3. Go to App Passwords\n" +
+            "4. Generate a new App Password for 'Mail' and 'Other (Custom name)'\n" +
+            "5. Use the generated 16-character password"
           );
         }
         throw new Error(`SMTP Verification failed: ${verifyError.message}`);
       }
 
       const mailOptions = {
-        from: `"Portfolio Contact Form" <${process.env.SMTP_USER}>`,
+        from: {
+          name: "Portfolio Contact Form",
+          address: process.env.SMTP_USER
+        },
         to: process.env.SMTP_USER,
         subject: `Portfolio Contact: ${name}`,
         text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
@@ -83,7 +96,9 @@ export function registerRoutes(app: Express): Server {
         const info = await transporter.sendMail(mailOptions);
         console.log("Email sent successfully:", {
           messageId: info.messageId,
-          response: info.response
+          response: info.response,
+          accepted: info.accepted,
+          rejected: info.rejected
         });
 
         res.json({
@@ -96,8 +111,7 @@ export function registerRoutes(app: Express): Server {
           response: sendError.response,
           responseCode: sendError.responseCode,
           command: sendError.command,
-          message: sendError.message,
-          stack: sendError.stack
+          message: sendError.message
         });
         throw new Error(`Failed to send email: ${sendError.message}`);
       }
