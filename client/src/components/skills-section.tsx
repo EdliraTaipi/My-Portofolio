@@ -2,8 +2,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { IconType } from "react-icons";
-import useEmblaCarousel from 'embla-carousel-react';
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
+import React from 'react';
 import { 
   SiPython, 
   SiJavascript, 
@@ -20,7 +20,7 @@ import {
   SiJquery, 
   SiApachehadoop 
 } from "react-icons/si";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { X } from "lucide-react";
 
 const skillIcons: { [key: string]: IconType } = {
   Python: SiPython,
@@ -79,21 +79,8 @@ const getGradientBySkill = (skill: string) => {
 };
 
 export function SkillsSection() {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
-  const [isPrevEnabled, setIsPrevEnabled] = useState(false);
-  const [isNextEnabled, setIsNextEnabled] = useState(false);
-
-  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
-  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
-
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    setIsPrevEnabled(emblaApi.canScrollPrev());
-    setIsNextEnabled(emblaApi.canScrollNext());
-  }, [emblaApi]);
-
-  const flattenedSkills = skillCategories.reduce<string[]>((acc, category) => [...acc, ...category.skills], []);
+  const flattenedSkills = Array.from(new Set(skillCategories.reduce<string[]>((acc, category) => [...acc, ...category.skills], [])));
 
   return (
     <section id="skills" className="py-20 bg-muted/50 relative overflow-hidden">
@@ -106,51 +93,31 @@ export function SkillsSection() {
         >
           <h2 className="text-3xl font-bold mb-12 text-center">Skills</h2>
 
-          <div className="relative">
-            <div className="overflow-hidden" ref={emblaRef}>
-              <div className="flex">
-                {flattenedSkills.map((skill, index) => {
-                  const Icon = skillIcons[skill];
-                  return (
-                    <motion.div
-                      key={skill}
-                      className="flex-[0_0_100%] min-w-0 md:flex-[0_0_33.33%] px-4"
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <Card
-                        className="h-[300px] cursor-pointer relative overflow-hidden group"
-                        onClick={() => setSelectedSkill(skill)}
-                      >
-                        <div className={`absolute inset-0 bg-gradient-to-br ${getGradientBySkill(skill)} opacity-10 group-hover:opacity-20 transition-opacity`} />
-                        <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-                          <Icon className="w-20 h-20 mb-4 text-primary group-hover:scale-110 transition-transform" />
-                          <h3 className="text-xl font-semibold mb-2">{skill}</h3>
-                          <p className="text-muted-foreground text-center">Click to expand</p>
-                        </div>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <button
-              onClick={scrollPrev}
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm p-2 rounded-full shadow-lg hover:bg-background transition-colors"
-              disabled={!isPrevEnabled}
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <button
-              onClick={scrollNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm p-2 rounded-full shadow-lg hover:bg-background transition-colors"
-              disabled={!isNextEnabled}
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {flattenedSkills.map((skill, index) => {
+              const Icon = skillIcons[skill];
+              return (
+                <motion.div
+                  key={skill}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card
+                    className="h-[200px] cursor-pointer relative overflow-hidden group"
+                    onClick={() => setSelectedSkill(skill)}
+                  >
+                    <div className={`absolute inset-0 bg-gradient-to-br ${getGradientBySkill(skill)} opacity-10 group-hover:opacity-20 transition-opacity`} />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
+                      <Icon className="w-16 h-16 mb-4 text-primary group-hover:scale-110 transition-transform" />
+                      <h3 className="text-xl font-semibold mb-2">{skill}</h3>
+                      <p className="text-sm text-muted-foreground text-center">Click to expand</p>
+                    </div>
+                  </Card>
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
       </div>
