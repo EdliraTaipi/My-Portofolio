@@ -111,43 +111,23 @@ export function registerRoutes(app: Express): Server {
     try {
       const { name, email, message } = contactFormSchema.parse(req.body);
 
-      // Log environment variables status (without exposing values)
-      console.log("Starting email sending process with config:", {
-        SMTP_HOST_SET: !!process.env.SMTP_HOST,
-        SMTP_USER_SET: !!process.env.SMTP_USER,
-        SMTP_PASS_SET: !!process.env.SMTP_PASS,
-        SMTP_PORT_SET: !!process.env.SMTP_PORT
-      });
-
       if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.SMTP_PORT) {
         throw new Error("SMTP configuration is incomplete");
       }
 
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
-        port: 587,
-        secure: false,
-        requireTLS: true,
+        port: parseInt(process.env.SMTP_PORT),
+        secure: process.env.SMTP_PORT === "465", // Use secure for port 465, otherwise false
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
         },
-        debug: true,
-        logger: true
+        tls: {
+          rejectUnauthorized: false, // Accept self-signed certificates
+          ciphers: 'SSLv3'
+        }
       });
-
-      try {
-        console.log("Attempting to verify SMTP connection...");
-        await transporter.verify();
-        console.log("SMTP connection verified successfully");
-      } catch (verifyError: any) {
-        console.error("SMTP Verification error details:", {
-          code: verifyError.code,
-          response: verifyError.response,
-          message: verifyError.message
-        });
-        throw new Error(`SMTP Verification failed: ${verifyError.message}`);
-      }
 
       const mailOptions = {
         from: {
@@ -177,18 +157,14 @@ export function registerRoutes(app: Express): Server {
       try {
         console.log("Attempting to send email...");
         const info = await transporter.sendMail(mailOptions);
-        console.log("Email sent successfully:", {
-          messageId: info.messageId,
-          response: info.response,
-          accepted: info.accepted,
-          rejected: info.rejected
-        });
+        console.log("Email sent successfully:", info.messageId);
 
         res.json({
+          success: true,
           message: "Message sent successfully"
         });
       } catch (sendError: any) {
-        console.error("Email sending error details:", {
+        console.error("Email sending error:", {
           code: sendError.code,
           response: sendError.response,
           message: sendError.message
@@ -196,18 +172,16 @@ export function registerRoutes(app: Express): Server {
         throw new Error(`Failed to send email: ${sendError.message}`);
       }
     } catch (error: any) {
-      console.error("Contact form error details:", {
+      console.error("Contact form error:", {
         name: error.name,
         message: error.message,
         code: error.code
       });
 
       res.status(500).json({
-        message: error instanceof z.ZodError
-          ? "Invalid form data"
-          : "Failed to send message",
-        details: error.message,
-        errorCode: error.code || 'UNKNOWN'
+        success: false,
+        message: error instanceof z.ZodError ? "Invalid form data" : "Failed to send message",
+        details: error.message
       });
     }
   });
