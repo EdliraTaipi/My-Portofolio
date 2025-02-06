@@ -29,6 +29,8 @@ export function NavigationBar() {
     }
   };
 
+  const nameLetters = "Edlira Taipi".split("");
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-40">
       <motion.div
@@ -42,15 +44,33 @@ export function NavigationBar() {
         transition={{ duration: 0.5 }}
       >
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between py-4">
-            <motion.h1 
-              className="text-2xl font-bold text-foreground"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
-              <span className="text-primary">E</span>dlira Taipi
-            </motion.h1>
+          <div className="flex flex-col items-center justify-center py-4">
+            <motion.div className="mb-4 flex">
+              {nameLetters.map((letter, index) => (
+                <motion.span
+                  key={index}
+                  className={`text-2xl font-bold ${letter === " " ? "mx-2" : ""} ${
+                    letter === "E" ? "text-primary" : "text-foreground"
+                  }`}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    delay: index * 0.1,
+                    duration: 0.5,
+                    repeat: Infinity,
+                    repeatType: "reverse",
+                    repeatDelay: 5
+                  }}
+                  whileHover={{
+                    scale: 1.2,
+                    color: "#64ffda",
+                    transition: { duration: 0.2 }
+                  }}
+                >
+                  {letter}
+                </motion.span>
+              ))}
+            </motion.div>
             <div className="nav-links">
               {links.map((link, index) => (
                 <motion.a
@@ -75,6 +95,8 @@ export function NavigationBar() {
         .nav-links {
           display: flex;
           gap: 2rem;
+          justify-content: center;
+          align-items: center;
         }
 
         .nav-link {
