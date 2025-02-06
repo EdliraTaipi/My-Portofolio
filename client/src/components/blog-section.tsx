@@ -11,6 +11,21 @@ import {
 import { useState } from "react";
 import { X, MessageCircle } from "lucide-react";
 import { BlogChat } from "./blog-chat";
+import { useQuery } from "@tanstack/react-query";
+
+interface DevToArticle {
+  id: number;
+  title: string;
+  description: string;
+  published_at: string;
+  tags: string[];
+  url: string;
+  reading_time_minutes: number;
+  body_html: string;
+  user: {
+    name: string;
+  }
+}
 
 interface BlogPost {
   id: string;
@@ -20,65 +35,42 @@ interface BlogPost {
   category: string;
   readTime: string;
   content?: string;
+  url?: string;
+  author?: string;
 }
 
-const blogPosts: BlogPost[] = [
-  {
-    id: "1",
-    title: "Understanding Data Visualization Techniques",
-    date: "January 25, 2025",
-    excerpt: "Exploring modern approaches to data visualization and their impact on decision-making processes...",
-    category: "Data Science",
-    readTime: "5 min read",
-    content: `Data visualization is a crucial aspect of data analysis and presentation. In this article, we'll explore various techniques and best practices for creating effective data visualizations that communicate insights clearly and effectively.
-
-    Key topics we'll cover:
-    1. Choosing the right chart type
-    2. Color theory in data visualization
-    3. Interactive visualization techniques
-    4. Common pitfalls to avoid
-
-    Stay tuned for more updates and insights!`
-  },
-  {
-    id: "2",
-    title: "The Future of Web Development",
-    date: "January 20, 2025",
-    excerpt: "Discussing emerging trends in web development and how they're shaping the digital landscape...",
-    category: "Web Development",
-    readTime: "4 min read",
-    content: `The web development landscape is constantly evolving. This post explores upcoming trends and technologies that will shape the future of web development.
-
-    Topics covered:
-    1. Web Assembly and its impact
-    2. AI-driven development tools
-    3. The rise of micro-frontends
-    4. Performance optimization techniques
-
-    More detailed insights coming soon!`
-  },
-  {
-    id: "3",
-    title: "Machine Learning in Practice",
-    date: "January 15, 2025",
-    excerpt: "Real-world applications of machine learning algorithms and their practical implementations...",
-    category: "Machine Learning",
-    readTime: "6 min read",
-    content: `Machine learning is transforming various industries. Let's look at practical applications and implementation strategies.
-
-    Key aspects:
-    1. Model selection criteria
-    2. Data preparation techniques
-    3. Deployment strategies
-    4. Performance monitoring
-
-    Check back for the complete article!`
+const fetchDevToPosts = async (): Promise<BlogPost[]> => {
+  const response = await fetch('https://dev.to/api/articles?username=edlirataipi&per_page=9');
+  if (!response.ok) {
+    throw new Error('Failed to fetch blog posts');
   }
-];
+  const articles: DevToArticle[] = await response.json();
+
+  return articles.map(article => ({
+    id: article.id.toString(),
+    title: article.title,
+    date: new Date(article.published_at).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }),
+    excerpt: article.description,
+    category: article.tags[0] || 'General',
+    readTime: `${article.reading_time_minutes} min read`,
+    content: article.body_html,
+    url: article.url,
+    author: article.user.name
+  }));
+};
 
 export function BlogSection() {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+
+  const { data: blogPosts, isLoading, error } = useQuery({
+    queryKey: ['blog-posts'],
+    queryFn: fetchDevToPosts
+  });
 
   return (
     <section id="blog" className="py-20 bg-muted/50">
@@ -90,40 +82,64 @@ export function BlogSection() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl font-bold mb-8 text-center">Latest Blog Posts</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {blogPosts.map((post, index) => (
-              <motion.div
-                key={post.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="h-full hover:shadow-lg transition-shadow duration-300">
-                  <CardHeader>
-                    <div className="flex justify-between items-start mb-2">
-                      <Badge variant="secondary">{post.category}</Badge>
-                      <span className="text-sm text-muted-foreground">{post.readTime}</span>
-                    </div>
-                    <h3 className="text-xl font-semibold leading-tight mb-2">{post.title}</h3>
-                    <p className="text-sm text-muted-foreground">{post.date}</p>
+
+          {isLoading ? (
+            <div className="grid md:grid-cols-3 gap-8">
+              {[...Array(6)].map((_, index) => (
+                <Card key={index} className="animate-pulse">
+                  <CardHeader className="space-y-2">
+                    <div className="h-4 bg-muted rounded w-3/4" />
+                    <div className="h-3 bg-muted rounded w-1/2" />
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground mb-4">{post.excerpt}</p>
-                    <div className="flex gap-4">
-                      <Button 
-                        variant="link" 
-                        className="p-0 h-auto font-semibold hover:text-primary transition-colors"
-                        onClick={() => setSelectedPost(post)}
-                      >
-                        Read More →
-                      </Button>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-muted rounded" />
+                      <div className="h-3 bg-muted rounded w-5/6" />
                     </div>
                   </CardContent>
                 </Card>
-              </motion.div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="text-center text-red-500">
+              Failed to load blog posts. Please try again later.
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-8">
+              {blogPosts?.map((post, index) => (
+                <motion.div
+                  key={post.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="h-full hover:shadow-lg transition-shadow duration-300">
+                    <CardHeader>
+                      <div className="flex justify-between items-start mb-2">
+                        <Badge variant="secondary">{post.category}</Badge>
+                        <span className="text-sm text-muted-foreground">{post.readTime}</span>
+                      </div>
+                      <h3 className="text-xl font-semibold leading-tight mb-2">{post.title}</h3>
+                      <p className="text-sm text-muted-foreground">{post.date}</p>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground mb-4">{post.excerpt}</p>
+                      <div className="flex gap-4">
+                        <Button 
+                          variant="link" 
+                          className="p-0 h-auto font-semibold hover:text-primary transition-colors"
+                          onClick={() => setSelectedPost(post)}
+                        >
+                          Read More →
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
 
           <Dialog open={!!selectedPost} onOpenChange={() => {
             setSelectedPost(null);
@@ -139,17 +155,32 @@ export function BlogSection() {
                   <span>{selectedPost?.date}</span>
                   <span>·</span>
                   <span>{selectedPost?.readTime}</span>
+                  {selectedPost?.author && (
+                    <>
+                      <span>·</span>
+                      <span>By {selectedPost.author}</span>
+                    </>
+                  )}
                 </div>
               </DialogHeader>
               <div className="flex gap-8">
                 <div className="flex-1">
-                  <div className="prose prose-neutral dark:prose-invert">
-                    {selectedPost?.content?.split('\n').map((paragraph, index) => (
-                      <p key={index} className="mb-4">
-                        {paragraph.trim()}
-                      </p>
-                    ))}
-                  </div>
+                  <div 
+                    className="prose prose-neutral dark:prose-invert"
+                    dangerouslySetInnerHTML={{ 
+                      __html: selectedPost?.content || 'No content available.'
+                    }}
+                  />
+                  {selectedPost?.url && (
+                    <div className="mt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => window.open(selectedPost.url, '_blank')}
+                      >
+                        Read on Dev.to →
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="w-80 flex flex-col">
