@@ -9,66 +9,54 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { X, MessageCircle } from "lucide-react";
+import { X, MessageCircle, ExternalLink } from "lucide-react";
 import { BlogChat } from "./blog-chat";
 import { useQuery } from "@tanstack/react-query";
-import { Octokit } from "@octokit/rest";
+import Parser from 'rss-parser';
 
-interface Repository {
-  id: number;
-  name: string;
-  description: string;
-  created_at: string;
-  topics: string[];
-  html_url: string;
-  homepage: string;
-  language: string;
-  readme?: string;
+interface BlogPost {
+  id: string;
+  title: string;
+  link: string;
+  content: string;
+  date: string;
+  categories: string[];
+  author: string;
 }
 
-const octokit = new Octokit();
+const parser = new Parser();
 
-const fetchGitHubRepositories = async (): Promise<Repository[]> => {
+const fetchGitHubBlogPosts = async (): Promise<BlogPost[]> => {
   try {
-    // Fetch repositories
-    const { data: repos } = await octokit.repos.listForUser({
-      username: 'EdliraTaipi',
-      sort: 'updated',
-      per_page: 9
-    });
-
-    // Fetch README content for each repository
-    const reposWithReadme = await Promise.all(
-      repos.map(async (repo) => {
-        try {
-          const { data: readme } = await octokit.repos.getReadme({
-            owner: 'EdliraTaipi',
-            repo: repo.name,
-          });
-
-          const readmeContent = Buffer.from(readme.content, 'base64').toString('utf-8');
-          return { ...repo, readme: readmeContent };
-        } catch (error) {
-          console.log(`No README found for ${repo.name}`);
-          return repo;
-        }
-      })
-    );
-
-    return reposWithReadme;
+    const feed = await parser.parseURL('https://github.blog/news-insights/feed/');
+    return feed.items.map((item, index) => ({
+      id: item.guid || String(index),
+      title: item.title || 'Untitled',
+      link: item.link || '',
+      content: item.content || item['content:encoded'] || '',
+      date: item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }) : '',
+      categories: item.categories || [],
+      author: item.creator || 'GitHub Blog'
+    }));
   } catch (error) {
-    console.error('Error fetching repositories:', error);
+    console.error('Error fetching GitHub blog posts:', error);
     return [];
   }
 };
 
 export function BlogSection() {
-  const [selectedPost, setSelectedPost] = useState<Repository | null>(null);
+  const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  const { data: repositories, isLoading } = useQuery({
-    queryKey: ['github-blogs'],
-    queryFn: fetchGitHubRepositories
+  const { data: blogPosts, isLoading } = useQuery({
+    queryKey: ['github-blog'],
+    queryFn: fetchGitHubBlogPosts,
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   return (
@@ -80,7 +68,7 @@ export function BlogSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-3xl font-bold mb-8 text-center">Latest Projects & Articles</h2>
+          <h2 className="text-3xl font-bold mb-8 text-center">Latest from GitHub Blog</h2>
 
           {isLoading ? (
             <div className="grid md:grid-cols-3 gap-8">
@@ -101,9 +89,9 @@ export function BlogSection() {
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-8">
-              {repositories?.map((repo, index) => (
+              {blogPosts?.map((post, index) => (
                 <motion.div
-                  key={repo.id}
+                  key={post.id}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -112,23 +100,19 @@ export function BlogSection() {
                   <Card className="h-full hover:shadow-lg transition-shadow duration-300">
                     <CardHeader>
                       <div className="flex justify-between items-start mb-2">
-                        <Badge variant="secondary">{repo.language || 'Project'}</Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {new Date(repo.created_at).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </span>
+                        {post.categories?.[0] && (
+                          <Badge variant="secondary">{post.categories[0]}</Badge>
+                        )}
+                        <span className="text-sm text-muted-foreground">{post.date}</span>
                       </div>
-                      <h3 className="text-xl font-semibold leading-tight mb-2">{repo.name}</h3>
+                      <h3 className="text-xl font-semibold leading-tight mb-2">{post.title}</h3>
+                      <p className="text-sm text-muted-foreground">By {post.author}</p>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground mb-4">{repo.description || 'Click to read more...'}</p>
                       <div className="flex flex-wrap gap-2 mb-4">
-                        {repo.topics?.map((topic) => (
-                          <Badge key={topic} variant="outline">
-                            {topic}
+                        {post.categories?.slice(1).map((category) => (
+                          <Badge key={category} variant="outline">
+                            {category}
                           </Badge>
                         ))}
                       </div>
@@ -136,7 +120,7 @@ export function BlogSection() {
                         <Button 
                           variant="link" 
                           className="p-0 h-auto font-semibold hover:text-primary transition-colors"
-                          onClick={() => setSelectedPost(repo)}
+                          onClick={() => setSelectedPost(post)}
                         >
                           Read More →
                         </Button>
@@ -155,44 +139,33 @@ export function BlogSection() {
             <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold mb-2">
-                  {selectedPost?.name}
+                  {selectedPost?.title}
                 </DialogTitle>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                  <Badge variant="secondary">{selectedPost?.language || 'Project'}</Badge>
-                  <span>
-                    {selectedPost && new Date(selectedPost.created_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </span>
+                  {selectedPost?.categories?.[0] && (
+                    <Badge variant="secondary">{selectedPost.categories[0]}</Badge>
+                  )}
+                  <span>{selectedPost?.date}</span>
+                  <span>·</span>
+                  <span>By {selectedPost?.author}</span>
                 </div>
               </DialogHeader>
               <div className="flex gap-8">
                 <div className="flex-1">
-                  <div className="prose prose-neutral dark:prose-invert">
-                    {selectedPost?.readme ? (
-                      <div dangerouslySetInnerHTML={{ __html: selectedPost.readme }} />
-                    ) : (
-                      <p>{selectedPost?.description || 'No description available.'}</p>
-                    )}
-                  </div>
-                  {selectedPost?.html_url && (
-                    <div className="mt-4 space-x-4">
+                  <div 
+                    className="prose prose-neutral dark:prose-invert"
+                    dangerouslySetInnerHTML={{ __html: selectedPost?.content || '' }}
+                  />
+                  {selectedPost?.link && (
+                    <div className="mt-4">
                       <Button
                         variant="outline"
-                        onClick={() => window.open(selectedPost.html_url, '_blank')}
+                        onClick={() => window.open(selectedPost.link, '_blank')}
+                        className="gap-2"
                       >
-                        View on GitHub →
+                        <ExternalLink className="w-4 h-4" />
+                        Read on GitHub Blog
                       </Button>
-                      {selectedPost.homepage && (
-                        <Button
-                          variant="outline"
-                          onClick={() => window.open(selectedPost.homepage, '_blank')}
-                        >
-                          View Live Demo →
-                        </Button>
-                      )}
                     </div>
                   )}
                 </div>
@@ -208,7 +181,7 @@ export function BlogSection() {
                   </Button>
                   {selectedPost && (
                     <BlogChat
-                      postId={selectedPost.id.toString()}
+                      postId={selectedPost.id}
                       isOpen={isChatOpen}
                     />
                   )}
