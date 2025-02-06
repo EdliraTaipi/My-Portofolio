@@ -28,13 +28,18 @@ export function registerRoutes(app: Express): Server {
       // Create reusable transporter object using SMTP transport
       const transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
-        port: 465, // Changed to 465 for secure connection
-        secure: true, // Changed to true for SSL
+        port: 587,
+        secure: false, // Use STARTTLS
         auth: {
           user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS // This should be an App Password
+          pass: process.env.SMTP_PASS
         },
-        debug: true, // Keep debug enabled to see detailed logs
+        debug: true,
+        logger: true,
+        tls: {
+          ciphers: 'SSLv3',
+          rejectUnauthorized: true
+        }
       });
 
       // Verify SMTP connection configuration
@@ -48,8 +53,14 @@ export function registerRoutes(app: Express): Server {
           response: verifyError.response,
           responseCode: verifyError.responseCode,
           command: verifyError.command,
-          message: verifyError.message
+          message: verifyError.message,
+          stack: verifyError.stack
         });
+
+        // Check for specific Gmail authentication errors
+        if (verifyError.responseCode === 535) {
+          throw new Error("Gmail authentication failed. Please ensure you're using an App Password and not your regular Gmail password.");
+        }
         throw new Error(`SMTP Verification failed: ${verifyError.message}`);
       }
 
@@ -72,8 +83,13 @@ export function registerRoutes(app: Express): Server {
       };
 
       try {
+        console.log("Attempting to send email...");
         const info = await transporter.sendMail(mailOptions);
-        console.log("Email sent successfully:", info.messageId);
+        console.log("Email sent successfully:", {
+          messageId: info.messageId,
+          response: info.response
+        });
+
         res.json({ 
           message: "Message sent successfully",
           messageId: info.messageId 
@@ -84,9 +100,10 @@ export function registerRoutes(app: Express): Server {
           response: sendError.response,
           responseCode: sendError.responseCode,
           command: sendError.command,
-          message: sendError.message
+          message: sendError.message,
+          stack: sendError.stack
         });
-        throw sendError;
+        throw new Error(`Failed to send email: ${sendError.message}`);
       }
     } catch (error: any) {
       console.error("Contact form error details:", {
