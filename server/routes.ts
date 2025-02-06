@@ -47,7 +47,6 @@ export function registerRoutes(app: Express): Server {
             pass: process.env.SMTP_PASS
           },
           tls: {
-            ciphers: 'SSLv3',
             rejectUnauthorized: false
           }
         };
@@ -123,9 +122,9 @@ export function registerRoutes(app: Express): Server {
           response: info.response
         });
 
-        res.json({ 
+        res.json({
           message: "Message sent successfully",
-          messageId: info.messageId 
+          messageId: info.messageId
         });
       } catch (sendError: any) {
         console.error("Email sending error details:", {
@@ -146,9 +145,9 @@ export function registerRoutes(app: Express): Server {
         code: error.code
       });
 
-      res.status(500).json({ 
-        message: error instanceof z.ZodError 
-          ? "Invalid form data" 
+      res.status(500).json({
+        message: error instanceof z.ZodError
+          ? "Invalid form data"
           : "Failed to send message",
         details: error.message,
         errorCode: error.code || 'UNKNOWN'
