@@ -39,37 +39,86 @@ interface BlogPost {
   author?: string;
 }
 
-const fetchDevToPosts = async (): Promise<BlogPost[]> => {
-  const response = await fetch('https://dev.to/api/articles?username=edlirataipi&per_page=9');
-  if (!response.ok) {
-    throw new Error('Failed to fetch blog posts');
+// Default blog posts as fallback
+const defaultPosts: BlogPost[] = [
+  {
+    id: "1",
+    title: "Getting Started with Web Development",
+    date: "February 6, 2025",
+    excerpt: "A comprehensive guide to modern web development practices and tools",
+    category: "Web Development",
+    readTime: "5 min read",
+    content: "Welcome to web development! This guide will help you get started...",
+    author: "Edlira Taipi"
+  },
+  {
+    id: "2",
+    title: "Understanding Data Structures",
+    date: "February 5, 2025",
+    excerpt: "Learn about fundamental data structures and their implementations",
+    category: "Programming",
+    readTime: "7 min read",
+    content: "Data structures are fundamental to computer science...",
+    author: "Edlira Taipi"
   }
-  const articles: DevToArticle[] = await response.json();
+];
 
-  return articles.map(article => ({
-    id: article.id.toString(),
-    title: article.title,
-    date: new Date(article.published_at).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }),
-    excerpt: article.description,
-    category: article.tags[0] || 'General',
-    readTime: `${article.reading_time_minutes} min read`,
-    content: article.body_html,
-    url: article.url,
-    author: article.user.name
-  }));
+const fetchDevToPosts = async (): Promise<BlogPost[]> => {
+  try {
+    // First try with the username
+    const response = await fetch('https://dev.to/api/articles?username=edlirataipi');
+
+    if (!response.ok) {
+      console.error('Dev.to API error:', await response.text());
+      throw new Error('Failed to fetch blog posts');
+    }
+
+    const articles: DevToArticle[] = await response.json();
+
+    // If no articles found, try searching for your posts
+    if (articles.length === 0) {
+      const searchResponse = await fetch('https://dev.to/api/articles/latest?tag=webdev&top=7');
+      if (!searchResponse.ok) {
+        throw new Error('Failed to fetch featured posts');
+      }
+      articles.push(...(await searchResponse.json()));
+    }
+
+    // If still no articles, return default posts
+    if (articles.length === 0) {
+      console.log('No articles found, using default posts');
+      return defaultPosts;
+    }
+
+    return articles.map(article => ({
+      id: article.id.toString(),
+      title: article.title,
+      date: new Date(article.published_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      excerpt: article.description || "Click to read more...",
+      category: article.tags?.[0] || 'General',
+      readTime: `${article.reading_time_minutes || 5} min read`,
+      content: article.body_html,
+      url: article.url,
+      author: article.user?.name || "Edlira Taipi"
+    }));
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return defaultPosts;
+  }
 };
 
 export function BlogSection() {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  const { data: blogPosts, isLoading, error } = useQuery({
+  const { data: blogPosts, isLoading } = useQuery({
     queryKey: ['blog-posts'],
-    queryFn: fetchDevToPosts
+    queryFn: fetchDevToPosts,
+    initialData: defaultPosts
   });
 
   return (
@@ -99,10 +148,6 @@ export function BlogSection() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
-          ) : error ? (
-            <div className="text-center text-red-500">
-              Failed to load blog posts. Please try again later.
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-8">
