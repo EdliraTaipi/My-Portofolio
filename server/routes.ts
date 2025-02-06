@@ -25,37 +25,14 @@ export function registerRoutes(app: Express): Server {
         throw new Error("SMTP credentials are not properly configured");
       }
 
-      // Determine email provider and set appropriate SMTP settings
-      const emailDomain = process.env.SMTP_USER.toLowerCase().split('@')[1];
-      let smtpConfig;
-
-      if (emailDomain === 'gmail.com') {
-        smtpConfig = {
-          service: 'gmail',
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
-          }
-        };
-      } else if (emailDomain === 'hotmail.com' || emailDomain === 'outlook.com') {
-        smtpConfig = {
-          host: 'smtp.office365.com',
-          port: 587,
-          secure: false,
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
-          },
-          tls: {
-            rejectUnauthorized: false
-          }
-        };
-      } else {
-        throw new Error(`Unsupported email provider: ${emailDomain}. Please use either Gmail or Hotmail/Outlook.`);
-      }
-
-      // Create reusable transporter object using SMTP transport
-      const transporter = nodemailer.createTransport(smtpConfig);
+      // Configure Gmail SMTP transport
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS // This should be an App Password for Gmail
+        }
+      });
 
       // Verify SMTP connection configuration
       try {
@@ -72,26 +49,13 @@ export function registerRoutes(app: Express): Server {
           stack: verifyError.stack
         });
 
-        // Provide specific error messages based on the email provider
         if (verifyError.responseCode === 535) {
-          if (emailDomain === 'gmail.com') {
-            throw new Error(
-              "Gmail authentication failed. Please ensure you're using:\n" +
-              "1. A Gmail account\n" +
-              "2. An App Password (not your regular Gmail password)\n" +
-              "You can generate an App Password in your Gmail Account Settings → Security → 2-Step Verification → App Passwords"
-            );
-          } else {
-            throw new Error(
-              "Hotmail/Outlook authentication failed. Please ensure you're using:\n" +
-              "1. Your Microsoft account email\n" +
-              "2. Your account App Password (regular password won't work)\n" +
-              "To generate an App Password:\n" +
-              "1. Go to account.microsoft.com/security\n" +
-              "2. Enable 2-Step Verification if not enabled\n" +
-              "3. Generate an App Password for this application"
-            );
-          }
+          throw new Error(
+            "Gmail authentication failed. Please ensure you're using:\n" +
+            "1. A Gmail account\n" +
+            "2. An App Password (not your regular Gmail password)\n" +
+            "You can generate an App Password in your Gmail Account Settings → Security → 2-Step Verification → App Passwords"
+          );
         }
         throw new Error(`SMTP Verification failed: ${verifyError.message}`);
       }
