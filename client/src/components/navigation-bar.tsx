@@ -6,6 +6,7 @@ export function NavigationBar() {
     { href: "#", label: "Home" },
     { href: "#about", label: "About" },
     { href: "#skills", label: "Skills" },
+    { href: "#projects", label: "Projects" },
     { href: "#contact", label: "Contact" },
   ];
 
@@ -35,136 +36,84 @@ export function NavigationBar() {
         style={{ scaleX }}
       />
       <motion.div
-        className="bg-background/80 backdrop-blur-sm border-b border-border/40"
+        className="bg-background/95 backdrop-blur-md border-b border-border/40"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <div className="container mx-auto px-4">
-          <div className="relative flex flex-col items-center justify-center py-4">
+          <div className="flex items-center justify-between py-4">
             <motion.h1 
-              className="text-3xl font-bold mb-4 text-foreground"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
+              className="text-2xl font-bold text-foreground"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
             >
-              This is My Portfolio
+              <span className="text-primary">E</span>dlira Taipi
             </motion.h1>
-            <div className="nav">
-              <div className="container-nav">
-                {links.map((link) => (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    onClick={(e) => handleScrollToSection(e, link.href)}
-                    className="nav-btn"
-                  >
-                    {link.label}
-                  </a>
-                ))}
-                <svg
-                  className="outline"
-                  overflow="visible"
-                  width="400"
-                  height="60"
-                  viewBox="0 0 400 60"
-                  xmlns="http://www.w3.org/2000/svg"
+            <div className="nav-links">
+              {links.map((link, index) => (
+                <motion.a
+                  key={link.href}
+                  href={link.href}
+                  onClick={(e) => handleScrollToSection(e, link.href)}
+                  className="nav-link"
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 + 0.3, duration: 0.5 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <rect
-                    className="rect"
-                    pathLength="100"
-                    x="0"
-                    y="0"
-                    width="400"
-                    height="60"
-                    fill="transparent"
-                    strokeWidth="5"
-                  ></rect>
-                </svg>
-              </div>
+                  {link.label}
+                </motion.a>
+              ))}
             </div>
           </div>
         </div>
       </motion.div>
-      <style>
-        {`
-          .outline {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-          }
+      <style jsx>{`
+        .nav-links {
+          display: flex;
+          gap: 2rem;
+        }
 
-          .rect {
-            stroke-dashoffset: 5;
-            stroke-dasharray: 0 0 10 40 10 40;
-            transition: 0.5s;
-            stroke: #64ffda;
-          }
+        .nav-link {
+          color: hsl(var(--muted-foreground));
+          text-decoration: none;
+          font-weight: 500;
+          padding: 0.5rem;
+          position: relative;
+          transition: color 0.3s ease;
+        }
 
-          .nav {
-            position: relative;
-            width: 400px;
-            height: 60px;
-            margin: 0 auto;
-          }
+        .nav-link::after {
+          content: '';
+          position: absolute;
+          width: 100%;
+          height: 2px;
+          bottom: 0;
+          left: 0;
+          background-color: hsl(var(--primary));
+          transform: scaleX(0);
+          transform-origin: bottom right;
+          transition: transform 0.3s ease;
+        }
 
-          .container-nav:hover .outline .rect {
-            transition: 999999s;
-            stroke-dashoffset: 1;
-            stroke-dasharray: 0;
-          }
+        .nav-link:hover {
+          color: hsl(var(--primary));
+        }
 
-          .container-nav {
-            position: absolute;
-            inset: 0;
-            background: #171717;
-            display: flex;
-            flex-direction: row;
-            justify-content: space-around;
-            align-items: center;
-            padding: 0.5em;
-            border-radius: 8px;
-          }
+        .nav-link:hover::after {
+          transform: scaleX(1);
+          transform-origin: bottom left;
+        }
 
-          .nav-btn {
-            padding: 0.5em 1.5em;
-            color: #ccd6f6;
-            cursor: pointer;
-            transition: 0.1s;
-            text-decoration: none;
+        @media (max-width: 768px) {
+          .nav-links {
+            display: none;
           }
-
-          .nav-btn:hover {
-            color: #64ffda;
-          }
-
-          .nav-btn:nth-child(1):hover ~ svg .rect {
-            stroke-dashoffset: 0;
-            stroke-dasharray: 0 2 8 65 8 19;
-          }
-
-          .nav-btn:nth-child(2):hover ~ svg .rect {
-            stroke-dashoffset: 0;
-            stroke-dasharray: 0 12.6 9.5 41.3 9.5 39.6;
-          }
-
-          .nav-btn:nth-child(3):hover ~ svg .rect {
-            stroke-dashoffset: 0;
-            stroke-dasharray: 0 24.5 8.5 19.5 8.5 63.5;
-          }
-
-          .nav-btn:nth-child(4):hover ~ svg .rect {
-            stroke-dashoffset: 0;
-            stroke-dasharray: 0 34.7 6.9 2.2 6.9 84;
-          }
-
-          .nav-btn:hover ~ .outline .rect {
-            stroke-dashoffset: 0;
-            stroke-dasharray: 0 0 10 40 10 40;
-            transition: 0.5s !important;
-          }
-        `}
-      </style>
+        }
+      `}</style>
     </nav>
   );
 }
