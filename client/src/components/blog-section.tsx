@@ -2,7 +2,14 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Link } from "wouter";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useState } from "react";
+import { X } from "lucide-react";
 
 interface BlogPost {
   id: string;
@@ -69,14 +76,7 @@ const blogPosts: BlogPost[] = [
 ];
 
 export function BlogSection() {
-  const handleReadMore = (postId: string) => {
-    // Here you would typically navigate to a blog post page
-    // For now, we'll show an alert with the content
-    const post = blogPosts.find(p => p.id === postId);
-    if (post?.content) {
-      alert(post.content);
-    }
-  };
+  const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
 
   return (
     <section id="blog" className="py-20 bg-muted/50">
@@ -111,7 +111,7 @@ export function BlogSection() {
                     <Button 
                       variant="link" 
                       className="p-0 h-auto font-semibold hover:text-primary transition-colors"
-                      onClick={() => handleReadMore(post.id)}
+                      onClick={() => setSelectedPost(post)}
                     >
                       Read More →
                     </Button>
@@ -120,17 +120,37 @@ export function BlogSection() {
               </motion.div>
             ))}
           </div>
-          <motion.div
-            className="text-center mt-8"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
-          >
-            <Button variant="outline" size="lg">
-              View All Posts
-            </Button>
-          </motion.div>
+
+          <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold mb-2">
+                  {selectedPost?.title}
+                </DialogTitle>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                  <Badge variant="secondary">{selectedPost?.category}</Badge>
+                  <span>{selectedPost?.date}</span>
+                  <span>·</span>
+                  <span>{selectedPost?.readTime}</span>
+                </div>
+              </DialogHeader>
+              <div className="mt-4 prose prose-neutral dark:prose-invert">
+                {selectedPost?.content?.split('\n').map((paragraph, index) => (
+                  <p key={index} className="mb-4">
+                    {paragraph.trim()}
+                  </p>
+                ))}
+              </div>
+              <Button
+                className="absolute right-4 top-4"
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelectedPost(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogContent>
+          </Dialog>
         </motion.div>
       </div>
     </section>
