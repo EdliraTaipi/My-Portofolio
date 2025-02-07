@@ -207,45 +207,53 @@ export function registerRoutes(app: Express): Server {
       const transporter = nodemailer.createTransport({
         host: 'smtp-mail.outlook.com',
         port: 587,
-        secure: false,
+        secure: false, // upgrade later with STARTTLS
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
+        },
+        debug: true, // Show debug output
+        logger: true, // Log information into the console
+        tls: {
+          ciphers: 'SSLv3',
+          rejectUnauthorized: false
         }
       });
 
-      const mailOptions = {
-        from: process.env.SMTP_USER,
-        to: process.env.SMTP_USER,
-        subject: `Portfolio Contact: ${name}`,
-        text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">New Contact Form Submission</h2>
-            <div style="background: #f5f5f5; padding: 15px; border-radius: 5px;">
-              <p><strong>Name:</strong> ${name}</p>
-              <p><strong>Email:</strong> ${email}</p>
-              <p><strong>Message:</strong></p>
-              <p style="white-space: pre-wrap;">${message}</p>
-            </div>
-          </div>
-        `
-      };
-
       try {
-        console.log("Testing SMTP connection...");
-        await transporter.verify();
-        console.log("SMTP connection verified successfully");
+        console.log('Testing SMTP connection...');
+        console.log('Using email:', process.env.SMTP_USER); // Log email without password
 
-        console.log("Attempting to send email...");
+        await transporter.verify();
+        console.log('SMTP connection verified successfully');
+
+        const mailOptions = {
+          from: process.env.SMTP_USER,
+          to: process.env.SMTP_USER,
+          subject: `Portfolio Contact: ${name}`,
+          text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #333;">New Contact Form Submission</h2>
+              <div style="background: #f5f5f5; padding: 15px; border-radius: 5px;">
+                <p><strong>Name:</strong> ${name}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Message:</strong></p>
+                <p style="white-space: pre-wrap;">${message}</p>
+              </div>
+            </div>
+          `
+        };
+
+        console.log('Attempting to send email...');
         const info = await transporter.sendMail(mailOptions);
-        console.log("Email sent successfully:", info.messageId);
+        console.log('Email sent successfully:', info.messageId);
 
         res.json({
           success: true,
           message: "Message sent successfully"
         });
-      } catch (error: any) {
+      } catch (error) {
         console.error('SMTP Error Details:', {
           error: error.message,
           code: error.code,
@@ -255,27 +263,14 @@ export function registerRoutes(app: Express): Server {
           stack: error.stack
         });
 
-        let errorMessage = "Failed to send message";
-        if (error.code === 'EAUTH') {
-          errorMessage = "Authentication failed. Please check email credentials.";
-        } else if (error.code === 'ESOCKET') {
-          errorMessage = "Failed to connect to email server.";
-        }
-
         res.status(500).json({
           success: false,
-          message: errorMessage,
+          message: "Authentication failed. Please check email credentials.",
           details: error.message
         });
       }
-
-    } catch (error: any) {
-      console.error("Contact form error:", {
-        name: error.name,
-        message: error.message,
-        code: error.code
-      });
-
+    } catch (error) {
+      console.error("Contact form error:", error);
       res.status(500).json({
         success: false,
         message: error instanceof z.ZodError ? "Invalid form data" : "Failed to send message",
