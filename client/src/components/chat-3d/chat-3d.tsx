@@ -42,12 +42,14 @@ export function Chat3D() {
     };
   }, []);
 
-  // Auto-scroll effect
+  // Auto-scroll effect for messages only
   useEffect(() => {
-    const scrollTimeout = setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-    return () => clearTimeout(scrollTimeout);
+    if (messagesEndRef.current) {
+      const scrollContainer = messagesEndRef.current.closest('.scroll-area-viewport');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
   }, [messages]);
 
   const connectWebSocket = () => {
@@ -66,7 +68,6 @@ export function Chat3D() {
         setIsJoining(false);
         reconnectAttempts.current = 0;
 
-        // Send join message
         try {
           socket.send(JSON.stringify({
             type: 'join',
@@ -92,7 +93,6 @@ export function Chat3D() {
         console.log('WebSocket closed');
         setIsConnected(false);
 
-        // Implement exponential backoff for reconnection
         if (username && !reconnectTimeoutRef.current && reconnectAttempts.current < 5) {
           const backoffTime = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 10000);
           reconnectTimeoutRef.current = setTimeout(() => {
@@ -121,7 +121,11 @@ export function Chat3D() {
     }
   };
 
-  const handleJoin = () => {
+  const handleJoin = (e?: React.KeyboardEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+
     if (!username.trim()) {
       toast({
         title: "Username required",
@@ -135,7 +139,11 @@ export function Chat3D() {
     connectWebSocket();
   };
 
-  const handleSend = async () => {
+  const handleSend = async (e?: React.KeyboardEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+
     if (!input.trim() || !socketRef.current || !isConnected || isSending) return;
 
     try {
@@ -190,13 +198,13 @@ export function Chat3D() {
                 placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !isJoining && handleJoin()}
+                onKeyPress={(e) => e.key === 'Enter' && !isJoining && handleJoin(e)}
                 disabled={isJoining}
                 className="bg-gray-700/50 border-gray-600"
               />
               <Button
                 className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
-                onClick={handleJoin}
+                onClick={() => handleJoin()}
                 disabled={isJoining}
               >
                 {isJoining ? (
@@ -247,13 +255,13 @@ export function Chat3D() {
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !isSending && handleSend()}
+                onKeyPress={(e) => e.key === 'Enter' && !isSending && handleSend(e)}
                 placeholder="Type a message..."
                 disabled={!isConnected || isSending}
                 className="bg-gray-800/50 border-gray-700"
               />
               <Button
-                onClick={handleSend}
+                onClick={() => handleSend()}
                 disabled={!isConnected || isSending}
                 size="icon"
                 className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"

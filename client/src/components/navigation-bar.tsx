@@ -21,6 +21,14 @@ export function NavigationBar() {
   });
 
   const handleScrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    const activeElement = document.activeElement;
+    // Check if the active element is an input or textarea in the chat section
+    if (activeElement instanceof HTMLElement && 
+        (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') &&
+        activeElement.closest('#chat')) {
+      return;
+    }
+
     e.preventDefault();
     if (href === "#") {
       window.scrollTo({ top: 0, behavior: "smooth" });
