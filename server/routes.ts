@@ -199,35 +199,36 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Contact form endpoint
   app.post("/api/contact", async (req, res) => {
     try {
       const { name, email, message } = contactFormSchema.parse(req.body);
 
+      // Validate SMTP credentials
+      if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+        console.error('Missing SMTP credentials');
+        return res.status(500).json({
+          success: false,
+          message: "Email service is not configured properly. Please check system settings."
+        });
+      }
+
       const transporter = nodemailer.createTransport({
         host: 'smtp-mail.outlook.com',
         port: 587,
-        secure: false, // upgrade later with STARTTLS
+        secure: false,
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
         },
-        debug: true, // Show debug output
-        logger: true, // Log information into the console
-        tls: {
-          ciphers: 'SSLv3',
-          rejectUnauthorized: false
-        }
+        debug: true
       });
 
       try {
-        console.log('Testing SMTP connection...');
-        console.log('Using email:', process.env.SMTP_USER); // Log email without password
-
+        // Verify connection
         await transporter.verify();
-        console.log('SMTP connection verified successfully');
 
-        const mailOptions = {
+        // Send email
+        const info = await transporter.sendMail({
           from: process.env.SMTP_USER,
           to: process.env.SMTP_USER,
           subject: `Portfolio Contact: ${name}`,
@@ -243,38 +244,28 @@ export function registerRoutes(app: Express): Server {
               </div>
             </div>
           `
-        };
+        });
 
-        console.log('Attempting to send email...');
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent successfully:', info.messageId);
-
-        res.json({
+        console.log('Email sent successfully');
+        return res.json({
           success: true,
           message: "Message sent successfully"
         });
-      } catch (error) {
-        console.error('SMTP Error Details:', {
-          error: error.message,
-          code: error.code,
-          command: error.command,
-          response: error.response,
-          responseCode: error.responseCode,
-          stack: error.stack
-        });
 
-        res.status(500).json({
+      } catch (error) {
+        console.error('SMTP Error:', error instanceof Error ? error.message : 'Unknown error');
+        return res.status(500).json({
           success: false,
-          message: "Authentication failed. Please check email credentials.",
-          details: error.message
+          message: "Failed to send email. Please try again later.",
+          details: error instanceof Error ? error.message : "Unknown error"
         });
       }
     } catch (error) {
-      console.error("Contact form error:", error);
-      res.status(500).json({
+      console.error('Contact form error:', error);
+      return res.status(400).json({
         success: false,
-        message: error instanceof z.ZodError ? "Invalid form data" : "Failed to send message",
-        details: error.message
+        message: error instanceof z.ZodError ? "Invalid form data" : "Failed to process request",
+        details: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
