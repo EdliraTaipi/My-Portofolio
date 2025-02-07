@@ -1,20 +1,78 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Html } from '@react-three/drei';
+import { OrbitControls, useGLTF, Html, PerspectiveCamera } from '@react-three/drei';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, Send, X } from "lucide-react";
 
 function Model() {
-  // For now, we'll use a simple box as placeholder
-  // Later we can replace with actual 3D model
+  // For now, we'll use an animated cube as placeholder
+  const meshRef = useRef();
+
+  useEffect(() => {
+    if (!meshRef.current) return;
+
+    const animate = () => {
+      meshRef.current.rotation.y += 0.01;
+      requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => cancelAnimationFrame(animate);
+  }, []);
+
   return (
-    <mesh>
+    <mesh ref={meshRef}>
       <boxGeometry args={[1, 1, 1]} />
       <meshStandardMaterial color="cyan" />
     </mesh>
   );
+}
+
+const chatResponses = {
+  greeting: [
+    "Hello! I'm your AI guide. How can I help you explore the portfolio?",
+    "Hi there! Want to learn about Edlira's projects or experience?",
+    "Welcome! I can help you navigate through the portfolio. What interests you?"
+  ],
+  projects: [
+    "I'd be happy to show you some of Edlira's best projects! What type interests you - web development, AI, or full-stack?",
+    "There are several interesting projects in the portfolio. Would you like to see the latest ones?"
+  ],
+  skills: [
+    "Edlira specializes in React, TypeScript, and modern web development. Want to know more about a specific skill?",
+    "The tech stack includes React, Node.js, and various modern tools. Which area would you like to explore?"
+  ],
+  experience: [
+    "Edlira has experience in full-stack development and AI integration. Would you like specific details?",
+    "Let me tell you about some key achievements and work experience. Any particular area you're curious about?"
+  ],
+  default: [
+    "I can help you explore the portfolio, projects, or skills. What would you like to know?",
+    "Feel free to ask about specific projects, technologies, or experience!"
+  ]
+};
+
+function getResponse(input: string): string {
+  const lowercaseInput = input.toLowerCase();
+
+  if (lowercaseInput.includes('hi') || lowercaseInput.includes('hello')) {
+    return chatResponses.greeting[Math.floor(Math.random() * chatResponses.greeting.length)];
+  }
+  if (lowercaseInput.includes('project')) {
+    return chatResponses.projects[Math.floor(Math.random() * chatResponses.projects.length)];
+  }
+  if (lowercaseInput.includes('skill') || lowercaseInput.includes('tech')) {
+    return chatResponses.skills[Math.floor(Math.random() * chatResponses.skills.length)];
+  }
+  if (lowercaseInput.includes('experience') || lowercaseInput.includes('work')) {
+    return chatResponses.experience[Math.floor(Math.random() * chatResponses.experience.length)];
+  }
+
+  return chatResponses.default[Math.floor(Math.random() * chatResponses.default.length)];
 }
 
 export function AiAssistant() {
@@ -23,6 +81,15 @@ export function AiAssistant() {
     { type: 'assistant', text: "Hello! I'm your AI guide. Ask me anything about Edlira's work!" }
   ]);
   const [input, setInput] = useState('');
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -30,13 +97,11 @@ export function AiAssistant() {
     // Add user message
     setMessages(prev => [...prev, { type: 'user', text: input }]);
 
-    // Simulate AI response
+    // Generate AI response
     setTimeout(() => {
-      setMessages(prev => [...prev, {
-        type: 'assistant',
-        text: "I'm currently a demo assistant. Soon I'll be able to help you navigate through the portfolio and answer questions!"
-      }]);
-    }, 1000);
+      const response = getResponse(input);
+      setMessages(prev => [...prev, { type: 'assistant', text: response }]);
+    }, 500);
 
     setInput('');
   };
@@ -65,18 +130,25 @@ export function AiAssistant() {
 
               <div className="flex-1 relative">
                 <Canvas className="absolute inset-0">
+                  <PerspectiveCamera makeDefault position={[0, 0, 5]} />
                   <ambientLight intensity={0.5} />
                   <pointLight position={[10, 10, 10]} />
                   <Model />
-                  <OrbitControls enableZoom={false} />
+                  <OrbitControls 
+                    enableZoom={false}
+                    minPolarAngle={Math.PI / 3}
+                    maxPolarAngle={Math.PI / 1.5}
+                  />
                 </Canvas>
               </div>
 
               <div className="h-[200px] border-t bg-background/80 backdrop-blur-sm">
-                <div className="h-[156px] p-4 overflow-y-auto">
+                <ScrollArea className="h-[156px] p-4">
                   {messages.map((msg, i) => (
-                    <div
+                    <motion.div
                       key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
                       className={`mb-2 ${
                         msg.type === 'user' ? 'text-right' : 'text-left'
                       }`}
@@ -90,9 +162,10 @@ export function AiAssistant() {
                       >
                         {msg.text}
                       </span>
-                    </div>
+                    </motion.div>
                   ))}
-                </div>
+                  <div ref={messagesEndRef} />
+                </ScrollArea>
                 <div className="p-2 flex gap-2 border-t">
                   <Input
                     value={input}
