@@ -23,15 +23,14 @@ export function Chat3D() {
   const [isConnected, setIsConnected] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isSpoken, setIsSpoken] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
+  const reconnectAttempts = useRef(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (reconnectTimeoutRef.current) {
@@ -43,54 +42,83 @@ export function Chat3D() {
     };
   }, []);
 
+  // Auto-scroll effect
+  useEffect(() => {
+    const scrollTimeout = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+    return () => clearTimeout(scrollTimeout);
+  }, [messages]);
+
   const connectWebSocket = () => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       return;
     }
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const socket = new WebSocket(wsUrl);
+    try {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      const socket = new WebSocket(wsUrl);
 
-    socket.onopen = () => {
-      setIsConnected(true);
-      setIsJoining(false);
-      socket.send(JSON.stringify({
-        type: 'join',
-        username: username
-      }));
-    };
+      socket.onopen = () => {
+        console.log('WebSocket connected');
+        setIsConnected(true);
+        setIsJoining(false);
+        reconnectAttempts.current = 0;
 
-    socket.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
-        setMessages(prev => [...prev, message]);
-        setIsSpoken(true);
-        setTimeout(() => setIsSpoken(false), 1000);
-      } catch (error) {
-        console.error('Failed to parse message:', error);
-      }
-    };
+        // Send join message
+        try {
+          socket.send(JSON.stringify({
+            type: 'join',
+            username: username
+          }));
+        } catch (error) {
+          console.error('Failed to send join message:', error);
+        }
+      };
 
-    socket.onclose = () => {
+      socket.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          setMessages(prev => [...prev, message]);
+          setIsSpoken(true);
+          setTimeout(() => setIsSpoken(false), 1000);
+        } catch (error) {
+          console.error('Failed to parse message:', error);
+        }
+      };
+
+      socket.onclose = () => {
+        console.log('WebSocket closed');
+        setIsConnected(false);
+
+        // Implement exponential backoff for reconnection
+        if (username && !reconnectTimeoutRef.current && reconnectAttempts.current < 5) {
+          const backoffTime = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 10000);
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectTimeoutRef.current = undefined;
+            reconnectAttempts.current++;
+            connectWebSocket();
+          }, backoffTime);
+        }
+      };
+
+      socket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setIsConnected(false);
+      };
+
+      socketRef.current = socket;
+    } catch (error) {
+      console.error('Failed to create WebSocket:', error);
       setIsConnected(false);
-      if (username && !reconnectTimeoutRef.current) {
-        reconnectTimeoutRef.current = setTimeout(() => {
-          reconnectTimeoutRef.current = undefined;
-          connectWebSocket();
-        }, 3000);
-      }
-    };
-
-    socket.onerror = () => {
+      setIsJoining(false);
       toast({
         title: "Connection Error",
-        description: "Failed to connect to chat. Please try again.",
+        description: "Failed to establish chat connection. Please try again.",
         variant: "destructive",
       });
-    };
-
-    socketRef.current = socket;
+    }
   };
 
   const handleJoin = () => {
@@ -107,14 +135,24 @@ export function Chat3D() {
     connectWebSocket();
   };
 
-  const handleSend = () => {
-    if (!input.trim() || !socketRef.current || !isConnected) return;
+  const handleSend = async () => {
+    if (!input.trim() || !socketRef.current || !isConnected || isSending) return;
 
     try {
-      socketRef.current.send(JSON.stringify({
-        type: 'chat',
-        message: input.trim()
-      }));
+      setIsSending(true);
+      await new Promise((resolve, reject) => {
+        if (!socketRef.current) {
+          reject(new Error('No socket connection'));
+          return;
+        }
+
+        socketRef.current.send(JSON.stringify({
+          type: 'chat',
+          message: input.trim()
+        }));
+        resolve(true);
+      });
+
       setInput('');
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -123,6 +161,8 @@ export function Chat3D() {
         description: "Failed to send message. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -150,7 +190,7 @@ export function Chat3D() {
                 placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleJoin()}
+                onKeyPress={(e) => e.key === 'Enter' && !isJoining && handleJoin()}
                 disabled={isJoining}
                 className="bg-gray-700/50 border-gray-600"
               />
@@ -207,18 +247,22 @@ export function Chat3D() {
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                onKeyPress={(e) => e.key === 'Enter' && !isSending && handleSend()}
                 placeholder="Type a message..."
-                disabled={!isConnected}
+                disabled={!isConnected || isSending}
                 className="bg-gray-800/50 border-gray-700"
               />
               <Button
                 onClick={handleSend}
-                disabled={!isConnected}
+                disabled={!isConnected || isSending}
                 size="icon"
                 className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
               >
-                <Send className="w-4 h-4" />
+                {isSending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
               </Button>
             </div>
           </div>
