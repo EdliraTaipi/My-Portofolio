@@ -211,26 +211,19 @@ export function registerRoutes(app: Express): Server {
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT),
-        secure: process.env.SMTP_PORT === "465",
+        secure: false, // Use STARTTLS
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
         },
+        requireTLS: true, // Force TLS
         tls: {
-          rejectUnauthorized: false,
-          ciphers: 'SSLv3'
+          minVersion: 'TLSv1.2'
         }
       });
 
       const mailOptions = {
-        from: {
-          name: "Portfolio Contact Form",
-          address: process.env.SMTP_USER
-        },
-        replyTo: {
-          name: name,
-          address: email
-        },
+        from: process.env.SMTP_USER,
         to: process.env.SMTP_USER,
         subject: `Portfolio Contact: ${name}`,
         text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
@@ -248,6 +241,10 @@ export function registerRoutes(app: Express): Server {
       };
 
       try {
+        console.log("Testing SMTP connection...");
+        await transporter.verify();
+        console.log("SMTP connection verified successfully");
+
         console.log("Attempting to send email...");
         const info = await transporter.sendMail(mailOptions);
         console.log("Email sent successfully:", info.messageId);
@@ -257,9 +254,11 @@ export function registerRoutes(app: Express): Server {
           message: "Message sent successfully"
         });
       } catch (sendError: any) {
-        console.error("Email sending error:", {
+        console.error("Email error details:", {
           code: sendError.code,
+          command: sendError.command,
           response: sendError.response,
+          responseCode: sendError.responseCode,
           message: sendError.message
         });
         throw new Error(`Failed to send email: ${sendError.message}`);
