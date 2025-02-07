@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Points, PointMaterial, Text3D, Center } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Points, PointMaterial, Text3D } from '@react-three/drei';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,24 +8,31 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, Send, X, Bot, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as THREE from 'three';
+import type { Group, Points as ThreePoints } from 'three';
 
 function ParticleField() {
-  const points = useRef();
+  const points = useRef<ThreePoints>(null);
   const particleCount = 5000;
   const positions = new Float32Array(particleCount * 3);
   const colors = new Float32Array(particleCount * 3);
 
   useEffect(() => {
-    if (!points.current) return;
+    let animationFrameId: number;
 
     const animate = () => {
-      points.current.rotation.y += 0.0005;
-      points.current.rotation.z += 0.0002;
-      requestAnimationFrame(animate);
+      if (points.current) {
+        points.current.rotation.y += 0.0005;
+        points.current.rotation.z += 0.0002;
+      }
+      animationFrameId = requestAnimationFrame(animate);
     };
 
     animate();
-    return () => cancelAnimationFrame(animate);
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, []);
 
   for (let i = 0; i < particleCount; i++) {
@@ -71,8 +78,14 @@ function ParticleField() {
   );
 }
 
+interface TextGroupProps {
+  position: [number, number, number];
+  rotation: [number, number, number];
+  text: string;
+}
+
 function CodeVisualization() {
-  const group = useRef();
+  const group = useRef<Group>(null);
   const codeSnippets = [
     "const AI = new Intelligence();",
     "while(true) { learn(); }",
@@ -83,23 +96,29 @@ function CodeVisualization() {
   ];
 
   useEffect(() => {
-    if (!group.current) return;
+    let animationFrameId: number;
 
     const animate = () => {
-      group.current.rotation.y += 0.001;
+      if (group.current) {
+        group.current.rotation.y += 0.001;
 
-      // Animate each text child
-      group.current.children.forEach((child, i) => {
-        const time = Date.now() * 0.001;
-        child.position.y = Math.sin(time + i) * 0.5;
-        child.rotation.z = Math.sin(time * 0.5 + i) * 0.1;
-      });
-
-      requestAnimationFrame(animate);
+        group.current.children.forEach((child, i) => {
+          const time = Date.now() * 0.001;
+          if (child instanceof THREE.Group) {
+            child.position.y = Math.sin(time + i) * 0.5;
+            child.rotation.z = Math.sin(time * 0.5 + i) * 0.1;
+          }
+        });
+      }
+      animationFrameId = requestAnimationFrame(animate);
     };
 
     animate();
-    return () => cancelAnimationFrame(animate);
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, []);
 
   return (
@@ -132,9 +151,14 @@ function CodeVisualization() {
   );
 }
 
+interface Message {
+  type: 'user' | 'assistant';
+  text: string;
+}
+
 export function AiAssistant() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState(() => {
+  const [messages, setMessages] = useState<Message[]>(() => {
     const savedMessages = localStorage.getItem('chatMessages');
     return savedMessages ? JSON.parse(savedMessages) : [
       { type: 'assistant', text: "Hello! I'm your AI guide. Ask me anything about Edlira's work!" }
@@ -142,7 +166,7 @@ export function AiAssistant() {
   });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -150,7 +174,9 @@ export function AiAssistant() {
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   useEffect(() => {
@@ -163,7 +189,7 @@ export function AiAssistant() {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
-    setMessages(prev => [...prev, { type: 'user', text: input }]);
+    setMessages(prevMessages => [...prevMessages, { type: 'user', text: input }]);
     setInput('');
     setIsLoading(true);
 
@@ -177,10 +203,10 @@ export function AiAssistant() {
       if (!response.ok) throw new Error('Failed to get AI response');
 
       const { response: aiResponse } = await response.json();
-      setMessages(prev => [...prev, { type: 'assistant', text: aiResponse }]);
+      setMessages(prevMessages => [...prevMessages, { type: 'assistant', text: aiResponse }]);
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages(prev => [...prev, {
+      setMessages(prevMessages => [...prevMessages, {
         type: 'assistant',
         text: "I apologize, but I'm having trouble connecting to my AI services at the moment. Please try again later."
       }]);
@@ -264,7 +290,7 @@ export function AiAssistant() {
                     ref={inputRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                    onKeyPress={(e: React.KeyboardEvent) => e.key === 'Enter' && handleSend()}
                     placeholder="Ask me anything..."
                     disabled={isLoading}
                     className="bg-background/50 focus:bg-background transition-colors"
