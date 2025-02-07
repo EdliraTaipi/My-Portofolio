@@ -204,5 +204,23 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add DEV.to articles endpoint
+  app.get("/api/dev-articles", async (req, res) => {
+    try {
+      const response = await fetch('https://dev.to/api/articles?username=edlirataipi');
+      if (!response.ok) {
+        throw new Error('Failed to fetch DEV.to articles');
+      }
+      const articles = await response.json();
+      res.json(articles);
+    } catch (error) {
+      console.error('Error fetching DEV.to articles:', error);
+      res.status(500).json({
+        error: 'Failed to fetch articles',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   return httpServer;
 }

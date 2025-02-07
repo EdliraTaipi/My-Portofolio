@@ -9,60 +9,44 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { X, MessageCircle, ExternalLink } from "lucide-react";
+import { MessageCircle, ExternalLink } from "lucide-react";
 import { BlogChat } from "./blog-chat";
 import { useQuery } from "@tanstack/react-query";
-import Parser from 'rss-parser';
 
-interface BlogPost {
-  id: string;
+interface DevToArticle {
+  id: number;
   title: string;
-  link: string;
-  content: string;
-  date: string;
-  categories: string[];
-  author: string;
+  description: string;
+  url: string;
+  published_at: string;
+  tags: string[];
+  user: {
+    name: string;
+  };
+  cover_image: string;
 }
 
-const parser = new Parser();
-
-const fetchGitHubBlogPosts = async (): Promise<BlogPost[]> => {
+const fetchDevToArticles = async (): Promise<DevToArticle[]> => {
   try {
-    const response = await fetch('/api/github-blog');
+    const response = await fetch('/api/dev-articles');
     if (!response.ok) {
-      throw new Error('Failed to fetch blog posts');
+      throw new Error('Failed to fetch articles');
     }
-    const xmlData = await response.text();
-    const feed = await parser.parseString(xmlData);
-
-    return feed.items.map((item, index) => ({
-      id: item.guid || String(index),
-      title: item.title || 'Untitled',
-      link: item.link || '',
-      content: item.content || item['content:encoded'] || '',
-      date: item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      }) : '',
-      categories: item.categories || [],
-      author: item.creator || 'GitHub Blog'
-    }));
+    return await response.json();
   } catch (error) {
-    console.error('Error fetching GitHub blog posts:', error);
+    console.error('Error fetching DEV.to articles:', error);
     return [];
   }
 };
 
 export function BlogSection() {
-  const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<DevToArticle | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  const { data: blogPosts, isLoading } = useQuery({
-    queryKey: ['github-blog'],
-    queryFn: fetchGitHubBlogPosts,
-    refetchOnWindowFocus: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+  const { data: articles, isLoading } = useQuery({
+    queryKey: ['dev-articles'],
+    queryFn: fetchDevToArticles,
+    refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
   });
 
   return (
@@ -74,7 +58,7 @@ export function BlogSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-3xl font-bold mb-8 text-center">Latest from GitHub Blog</h2>
+          <h2 className="text-3xl font-bold mb-8 text-center">Latest Blog Posts</h2>
 
           {isLoading ? (
             <div className="grid md:grid-cols-3 gap-8">
@@ -95,9 +79,9 @@ export function BlogSection() {
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-8">
-              {blogPosts?.map((post, index) => (
+              {articles?.map((article, index) => (
                 <motion.div
-                  key={post.id}
+                  key={article.id}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -105,20 +89,28 @@ export function BlogSection() {
                 >
                   <Card className="h-full hover:shadow-lg transition-shadow duration-300">
                     <CardHeader>
+                      {article.cover_image && (
+                        <img
+                          src={article.cover_image}
+                          alt={article.title}
+                          className="w-full h-48 object-cover rounded-t-lg mb-4"
+                        />
+                      )}
                       <div className="flex justify-between items-start mb-2">
-                        {post.categories?.[0] && (
-                          <Badge variant="secondary">{post.categories[0]}</Badge>
-                        )}
-                        <span className="text-sm text-muted-foreground">{post.date}</span>
+                        <Badge variant="secondary">DEV.to</Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(article.published_at).toLocaleDateString()}
+                        </span>
                       </div>
-                      <h3 className="text-xl font-semibold leading-tight mb-2">{post.title}</h3>
-                      <p className="text-sm text-muted-foreground">By {post.author}</p>
+                      <h3 className="text-xl font-semibold leading-tight mb-2">{article.title}</h3>
+                      <p className="text-sm text-muted-foreground">By {article.user.name}</p>
                     </CardHeader>
                     <CardContent>
+                      <p className="text-muted-foreground mb-4 line-clamp-3">{article.description}</p>
                       <div className="flex flex-wrap gap-2 mb-4">
-                        {post.categories?.slice(1).map((category) => (
-                          <Badge key={category} variant="outline">
-                            {category}
+                        {article.tags.map((tag) => (
+                          <Badge key={tag} variant="outline">
+                            {tag}
                           </Badge>
                         ))}
                       </div>
@@ -126,7 +118,7 @@ export function BlogSection() {
                         <Button 
                           variant="link" 
                           className="p-0 h-auto font-semibold hover:text-primary transition-colors"
-                          onClick={() => setSelectedPost(post)}
+                          onClick={() => setSelectedArticle(article)}
                         >
                           Read More →
                         </Button>
@@ -138,39 +130,34 @@ export function BlogSection() {
             </div>
           )}
 
-          <Dialog open={!!selectedPost} onOpenChange={() => {
-            setSelectedPost(null);
+          <Dialog open={!!selectedArticle} onOpenChange={() => {
+            setSelectedArticle(null);
             setIsChatOpen(false);
           }}>
             <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold mb-2">
-                  {selectedPost?.title}
+                  {selectedArticle?.title}
                 </DialogTitle>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                  {selectedPost?.categories?.[0] && (
-                    <Badge variant="secondary">{selectedPost.categories[0]}</Badge>
-                  )}
-                  <span>{selectedPost?.date}</span>
+                  <Badge variant="secondary">DEV.to</Badge>
+                  <span>{new Date(selectedArticle?.published_at || '').toLocaleDateString()}</span>
                   <span>·</span>
-                  <span>By {selectedPost?.author}</span>
+                  <span>By {selectedArticle?.user.name}</span>
                 </div>
               </DialogHeader>
               <div className="flex gap-8">
                 <div className="flex-1">
-                  <div 
-                    className="prose prose-neutral dark:prose-invert"
-                    dangerouslySetInnerHTML={{ __html: selectedPost?.content || '' }}
-                  />
-                  {selectedPost?.link && (
+                  <p className="text-muted-foreground mb-4">{selectedArticle?.description}</p>
+                  {selectedArticle?.url && (
                     <div className="mt-4">
                       <Button
                         variant="outline"
-                        onClick={() => window.open(selectedPost.link, '_blank')}
+                        onClick={() => window.open(selectedArticle.url, '_blank')}
                         className="gap-2"
                       >
                         <ExternalLink className="w-4 h-4" />
-                        Read on GitHub Blog
+                        Read on DEV.to
                       </Button>
                     </div>
                   )}
@@ -185,25 +172,14 @@ export function BlogSection() {
                     <MessageCircle className="w-4 h-4" />
                     {isChatOpen ? 'Close Chat' : 'Join Discussion'}
                   </Button>
-                  {selectedPost && (
+                  {selectedArticle && (
                     <BlogChat
-                      postId={selectedPost.id}
+                      postId={selectedArticle.id.toString()}
                       isOpen={isChatOpen}
                     />
                   )}
                 </div>
               </div>
-              <Button
-                className="absolute right-4 top-4"
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setSelectedPost(null);
-                  setIsChatOpen(false);
-                }}
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </DialogContent>
           </Dialog>
         </motion.div>
