@@ -204,21 +204,13 @@ export function registerRoutes(app: Express): Server {
     try {
       const { name, email, message } = contactFormSchema.parse(req.body);
 
-      if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.SMTP_PORT) {
-        throw new Error("SMTP configuration is incomplete");
-      }
-
       const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT),
-        secure: false, // Use STARTTLS
+        host: 'smtp-mail.outlook.com',
+        port: 587,
+        secure: false,
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
-        },
-        requireTLS: true, // Force TLS
-        tls: {
-          minVersion: 'TLSv1.2'
         }
       });
 
@@ -253,16 +245,30 @@ export function registerRoutes(app: Express): Server {
           success: true,
           message: "Message sent successfully"
         });
-      } catch (sendError: any) {
-        console.error("Email error details:", {
-          code: sendError.code,
-          command: sendError.command,
-          response: sendError.response,
-          responseCode: sendError.responseCode,
-          message: sendError.message
+      } catch (error: any) {
+        console.error('SMTP Error Details:', {
+          error: error.message,
+          code: error.code,
+          command: error.command,
+          response: error.response,
+          responseCode: error.responseCode,
+          stack: error.stack
         });
-        throw new Error(`Failed to send email: ${sendError.message}`);
+
+        let errorMessage = "Failed to send message";
+        if (error.code === 'EAUTH') {
+          errorMessage = "Authentication failed. Please check email credentials.";
+        } else if (error.code === 'ESOCKET') {
+          errorMessage = "Failed to connect to email server.";
+        }
+
+        res.status(500).json({
+          success: false,
+          message: errorMessage,
+          details: error.message
+        });
       }
+
     } catch (error: any) {
       console.error("Contact form error:", {
         name: error.name,
