@@ -12,7 +12,7 @@ import type { Group, Points as ThreePoints } from 'three';
 
 function ParticleField() {
   const points = useRef<ThreePoints>(null);
-  const particleCount = 5000;
+  const particleCount = 2000; // Reduced for better performance
   const positions = new Float32Array(particleCount * 3);
   const colors = new Float32Array(particleCount * 3);
 
@@ -21,8 +21,8 @@ function ParticleField() {
 
     const animate = () => {
       if (points.current) {
-        points.current.rotation.y += 0.0005;
-        points.current.rotation.z += 0.0002;
+        points.current.rotation.y += 0.0002;
+        points.current.rotation.z += 0.0001;
       }
       animationFrameId = requestAnimationFrame(animate);
     };
@@ -36,7 +36,7 @@ function ParticleField() {
   }, []);
 
   for (let i = 0; i < particleCount; i++) {
-    const radius = 5 + Math.random() * 5;
+    const radius = 3 + Math.random() * 3;
     const theta = THREE.MathUtils.randFloatSpread(360);
     const phi = THREE.MathUtils.randFloatSpread(360);
 
@@ -78,21 +78,12 @@ function ParticleField() {
   );
 }
 
-interface TextGroupProps {
-  position: [number, number, number];
-  rotation: [number, number, number];
-  text: string;
-}
-
 function CodeVisualization() {
   const group = useRef<Group>(null);
   const codeSnippets = [
     "const AI = new Intelligence();",
     "while(true) { learn(); }",
     "if(human.ask()) { assist(); }",
-    "function solve(problem) {",
-    "return solution.optimal;",
-    "async function think() {"
   ];
 
   useEffect(() => {
@@ -101,12 +92,11 @@ function CodeVisualization() {
     const animate = () => {
       if (group.current) {
         group.current.rotation.y += 0.001;
-
         group.current.children.forEach((child, i) => {
-          const time = Date.now() * 0.001;
           if (child instanceof THREE.Group) {
-            child.position.y = Math.sin(time + i) * 0.5;
-            child.rotation.z = Math.sin(time * 0.5 + i) * 0.1;
+            const time = Date.now() * 0.001;
+            child.position.y = Math.sin(time + i) * 0.3;
+            child.rotation.z = Math.sin(time * 0.3 + i) * 0.05;
           }
         });
       }
@@ -125,16 +115,16 @@ function CodeVisualization() {
     <group ref={group}>
       {codeSnippets.map((text, index) => {
         const angle = (index / codeSnippets.length) * Math.PI * 2;
-        const radius = 2;
+        const radius = 1.5;
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
         return (
           <group key={index} position={[x, 0, z]} rotation={[0, -angle, 0]}>
             <Text3D
               font="/fonts/RobotoMono_Regular.json"
-              size={0.2}
-              height={0.1}
-              curveSegments={12}
+              size={0.15}
+              height={0.05}
+              curveSegments={4}
             >
               {text}
               <meshPhongMaterial
@@ -242,22 +232,25 @@ export function AiAssistant() {
               </div>
 
               <div className="flex-1 relative">
-                <Canvas className="absolute inset-0">
-                  <PerspectiveCamera makeDefault position={[0, 0, 10]} />
-                  <ambientLight intensity={0.5} />
-                  <pointLight position={[10, 10, 10]} intensity={1} />
-                  <spotLight position={[-10, -10, -10]} intensity={0.5} />
-                  <CodeVisualization />
-                  <ParticleField />
-                  <OrbitControls 
-                    enableZoom={false}
-                    minPolarAngle={Math.PI / 3}
-                    maxPolarAngle={Math.PI / 1.5}
-                    enableRotate={true}
-                    autoRotate={true}
-                    autoRotateSpeed={0.5}
-                  />
-                </Canvas>
+                {isOpen && ( // Only render Canvas when chat is open
+                  <Canvas className="absolute inset-0">
+                    <PerspectiveCamera makeDefault position={[0, 0, 8]} />
+                    <ambientLight intensity={0.5} />
+                    <pointLight position={[10, 10, 10]} intensity={1} />
+                    <spotLight position={[-10, -10, -10]} intensity={0.5} />
+                    <CodeVisualization />
+                    <ParticleField />
+                    <OrbitControls 
+                      enableZoom={false}
+                      enablePan={false}
+                      minPolarAngle={Math.PI / 2.5}
+                      maxPolarAngle={Math.PI / 1.8}
+                      enableRotate={true}
+                      autoRotate={true}
+                      autoRotateSpeed={0.5}
+                    />
+                  </Canvas>
+                )}
               </div>
 
               <div className="h-[200px] border-t bg-background/90 backdrop-blur-sm">
