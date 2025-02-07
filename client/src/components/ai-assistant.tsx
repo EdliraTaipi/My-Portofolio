@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Html, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Send, X } from "lucide-react";
+import { MessageCircle, Send, X, Bot } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 function Model() {
-  // For now, we'll use an animated cube as placeholder
   const meshRef = useRef();
 
   useEffect(() => {
@@ -82,6 +82,7 @@ export function AiAssistant() {
   ]);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -89,7 +90,10 @@ export function AiAssistant() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [messages, isOpen]);
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -118,11 +122,15 @@ export function AiAssistant() {
           >
             <div className="h-full flex flex-col">
               <div className="p-4 bg-muted flex justify-between items-center border-b">
-                <h3 className="font-semibold">AI Portfolio Assistant</h3>
+                <div className="flex items-center gap-2">
+                  <Bot className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold">AI Portfolio Assistant</h3>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsOpen(false)}
+                  className="hover:bg-background/10 text-foreground"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -142,7 +150,7 @@ export function AiAssistant() {
                 </Canvas>
               </div>
 
-              <div className="h-[200px] border-t bg-background/80 backdrop-blur-sm">
+              <div className="h-[200px] border-t bg-background/90 backdrop-blur-sm">
                 <ScrollArea className="h-[156px] p-4">
                   {messages.map((msg, i) => (
                     <motion.div
@@ -154,11 +162,12 @@ export function AiAssistant() {
                       }`}
                     >
                       <span
-                        className={`inline-block px-3 py-2 rounded-lg ${
+                        className={cn(
+                          "inline-block px-3 py-2 rounded-lg max-w-[80%] break-words",
                           msg.type === 'user'
                             ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
-                        }`}
+                            : 'bg-muted hover:bg-muted/80 transition-colors'
+                        )}
                       >
                         {msg.text}
                       </span>
@@ -166,14 +175,20 @@ export function AiAssistant() {
                   ))}
                   <div ref={messagesEndRef} />
                 </ScrollArea>
-                <div className="p-2 flex gap-2 border-t">
+                <div className="p-2 flex gap-2 border-t bg-card/50 backdrop-blur-sm">
                   <Input
+                    ref={inputRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                     placeholder="Ask me anything..."
+                    className="bg-background/50 focus:bg-background transition-colors"
                   />
-                  <Button onClick={handleSend}>
+                  <Button 
+                    onClick={handleSend}
+                    className="shrink-0"
+                    size="icon"
+                  >
                     <Send className="w-4 h-4" />
                   </Button>
                 </div>
@@ -189,8 +204,11 @@ export function AiAssistant() {
       >
         <Button
           size="lg"
-          className="rounded-full w-14 h-14 shadow-lg"
-          onClick={() => setIsOpen(true)}
+          className={cn(
+            "rounded-full w-14 h-14 shadow-lg",
+            isOpen && "bg-primary hover:bg-primary/90"
+          )}
+          onClick={() => setIsOpen(!isOpen)}
         >
           <MessageCircle className="w-6 h-6" />
         </Button>
