@@ -37,10 +37,7 @@ const blogPostSchema = z.object({
     required_error: "Please select a category",
   }),
   tags: z.array(z.string()).min(1, "At least one tag is required"),
-  readingTime: z.coerce.number().min(1, "Reading time is required"),
   difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
-  seoTitle: z.string().optional(),
-  seoDescription: z.string().optional(),
   codeSnippets: z.array(z.object({
     language: z.string(),
     code: z.string()
@@ -59,10 +56,7 @@ interface BlogEditorProps {
     coverImage?: string;
     category: string;
     tags: string[];
-    readingTime: number;
     difficulty?: string;
-    seoTitle?: string;
-    seoDescription?: string;
     codeSnippets?: Array<{
       language: string;
       code: string;
@@ -88,10 +82,7 @@ export function BlogEditor({ onClose, existingPost }: BlogEditorProps) {
       coverImage: existingPost?.coverImage || "",
       category: existingPost?.category as "tech-trends" | "tutorial" | "coding-challenge" | "experience" || "tech-trends",
       tags: existingPost?.tags || [],
-      readingTime: existingPost?.readingTime || 5,
       difficulty: existingPost?.difficulty as "beginner" | "intermediate" | "advanced" | undefined,
-      seoTitle: existingPost?.seoTitle || "",
-      seoDescription: existingPost?.seoDescription || "",
       codeSnippets: existingPost?.codeSnippets || [],
     },
   });
@@ -491,116 +482,6 @@ export function BlogEditor({ onClose, existingPost }: BlogEditorProps) {
                     </FormItem>
                   )}
                 />
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <Separator className="my-8" />
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.4 }}
-            className="space-y-6"
-          >
-            <div className="flex items-center gap-2 text-lg font-semibold text-primary mb-2">
-              <AlertCircle className="w-5 h-5" />
-              <h3>Additional Information</h3>
-            </div>
-            <Card>
-              <CardContent className="pt-6 space-y-6">
-                <FormField
-                  control={form.control}
-                  name="tags"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tags</FormLabel>
-                      <div className="space-y-4">
-                        <div className="flex flex-wrap gap-2">
-                          <AnimatePresence>
-                            {field.value.map((tag) => (
-                              <motion.div
-                                key={tag}
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                              >
-                                <Badge
-                                  variant="secondary"
-                                  className="gap-1"
-                                >
-                                  {tag}
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-4 w-4 p-0 hover:bg-transparent"
-                                    onClick={() => removeTag(tag)}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                </Badge>
-                              </motion.div>
-                            ))}
-                          </AnimatePresence>
-                        </div>
-                        <FormControl>
-                          <Input
-                            placeholder="Add tags (press Enter)"
-                            value={newTag}
-                            onChange={(e) => setNewTag(e.target.value)}
-                            onKeyPress={handleAddTag}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="readingTime"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estimated Reading Time (minutes)</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="1" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="seoTitle"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>SEO Title</FormLabel>
-                        <FormControl>
-                          <Input placeholder="SEO-optimized title" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="seoDescription"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Meta Description</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Meta description for SEO" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
               </CardContent>
             </Card>
           </motion.div>
