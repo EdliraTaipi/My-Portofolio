@@ -1,8 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from 'ws';
 import nodemailer from "nodemailer";
 import { z } from "zod";
-import { WebSocketServer, WebSocket } from 'ws';
 import { blogPosts, insertBlogPostSchema } from "@db/schema";
 import { db } from "@db";
 import { eq } from "drizzle-orm";
@@ -19,7 +19,6 @@ const contactFormSchema = z.object({
 
 interface ChatMessage {
   type: 'chat';
-  postId: string;
   username: string;
   message: string;
   timestamp: number;
@@ -27,7 +26,6 @@ interface ChatMessage {
 
 interface ChatClient extends WebSocket {
   username?: string;
-  postId?: string;
 }
 
 export function registerRoutes(app: Express): Server {
@@ -76,14 +74,15 @@ export function registerRoutes(app: Express): Server {
     res.json({ imageUrl });
   });
 
-  // Initialize WebSocket server
+  // Initialize WebSocket server with a specific path to avoid conflicts with Vite HMR
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 
-  // Store active chat rooms (postId -> Set of clients)
-  const chatRooms = new Map<string, Set<ChatClient>>();
+  // Store active chat clients
+  const chatClients = new Set<ChatClient>();
 
   wss.on('connection', (ws: ChatClient) => {
-    console.log('New WebSocket connection established');
+    console.log('New chat client connected');
+    chatClients.add(ws);
 
     ws.on('message', (data: string) => {
       try {
@@ -92,31 +91,23 @@ export function registerRoutes(app: Express): Server {
         switch (message.type) {
           case 'join':
             ws.username = message.username;
-            ws.postId = message.postId;
-
-            if (!chatRooms.has(message.postId)) {
-              chatRooms.set(message.postId, new Set());
-            }
-            chatRooms.get(message.postId)?.add(ws);
-
             const joinMessage = {
               type: 'system',
               message: `${message.username} joined the chat`,
               timestamp: Date.now()
             };
-            broadcastToRoom(message.postId, joinMessage);
+            broadcast(joinMessage);
             break;
 
           case 'chat':
-            if (ws.postId && ws.username) {
+            if (ws.username) {
               const chatMessage: ChatMessage = {
                 type: 'chat',
-                postId: ws.postId,
                 username: ws.username,
                 message: message.message,
                 timestamp: Date.now()
               };
-              broadcastToRoom(ws.postId, chatMessage);
+              broadcast(chatMessage);
             }
             break;
         }
@@ -126,29 +117,25 @@ export function registerRoutes(app: Express): Server {
     });
 
     ws.on('close', () => {
-      if (ws.postId && ws.username) {
-        chatRooms.get(ws.postId)?.delete(ws);
-
+      if (ws.username) {
         const leaveMessage = {
           type: 'system',
           message: `${ws.username} left the chat`,
           timestamp: Date.now()
         };
-        broadcastToRoom(ws.postId, leaveMessage);
+        chatClients.delete(ws);
+        broadcast(leaveMessage);
       }
     });
   });
 
-  function broadcastToRoom(postId: string, message: any) {
-    const room = chatRooms.get(postId);
-    if (room) {
-      const messageStr = JSON.stringify(message);
-      room.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(messageStr);
-        }
-      });
-    }
+  function broadcast(message: any) {
+    const messageStr = JSON.stringify(message);
+    chatClients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(messageStr);
+      }
+    });
   }
 
   // Blog posts endpoints

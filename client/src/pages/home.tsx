@@ -7,6 +7,7 @@ import { ProjectsSection } from "@/components/projects-section";
 import { BlogSection } from "@/components/blog-section";
 import { ContactForm } from "@/components/contact-form";
 import { Footer } from "@/components/footer";
+import { LiveChat } from "@/components/live-chat";
 
 export default function Home() {
   return (
@@ -24,6 +25,7 @@ export default function Home() {
         <ContactForm />
       </main>
       <Footer />
+      <LiveChat />
     </div>
   );
 }
