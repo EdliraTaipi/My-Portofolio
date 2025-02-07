@@ -14,7 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ImagePlus, X } from "lucide-react";
+import { ImagePlus, X, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const blogPostSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -40,6 +41,7 @@ export function BlogEditor({ onClose, existingPost }: BlogEditorProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(existingPost?.coverImage || null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<BlogPostFormData>({
     resolver: zodResolver(blogPostSchema),
@@ -95,6 +97,7 @@ export function BlogEditor({ onClose, existingPost }: BlogEditorProps) {
       return;
     }
 
+    setIsUploading(true);
     const formData = new FormData();
     formData.append('image', file);
 
@@ -117,6 +120,8 @@ export function BlogEditor({ onClose, existingPost }: BlogEditorProps) {
         description: "Failed to upload image",
         variant: "destructive",
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -128,121 +133,179 @@ export function BlogEditor({ onClose, existingPost }: BlogEditorProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Title</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter post title" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Title</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter post title" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </motion.div>
 
-        <FormField
-          control={form.control}
-          name="summary"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Summary</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Enter a brief summary of your post"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="content"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Content</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Write your blog post content"
-                  className="min-h-[200px]"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="coverImage"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Cover Image</FormLabel>
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById('image-upload')?.click()}
-                    className="gap-2"
-                  >
-                    <ImagePlus className="w-4 h-4" />
-                    Upload Image
-                  </Button>
-                  <Input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageUpload}
-                  />
-                  <Input
-                    placeholder="Or enter image URL"
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <FormField
+            control={form.control}
+            name="summary"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Summary</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Enter a brief summary of your post"
                     {...field}
-                    onChange={(e) => {
-                      field.onChange(e);
-                      setPreviewImage(e.target.value);
-                    }}
                   />
-                </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </motion.div>
 
-                {previewImage && (
-                  <div className="relative w-full h-48">
-                    <img
-                      src={previewImage}
-                      alt="Preview"
-                      className="w-full h-full object-cover rounded-lg"
-                    />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          <FormField
+            control={form.control}
+            name="content"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Content</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Write your blog post content"
+                    className="min-h-[200px]"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.3 }}
+        >
+          <FormField
+            control={form.control}
+            name="coverImage"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cover Image</FormLabel>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
                     <Button
                       type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2"
-                      onClick={removeImage}
+                      variant="outline"
+                      onClick={() => document.getElementById('image-upload')?.click()}
+                      className="gap-2"
+                      disabled={isUploading}
                     >
-                      <X className="w-4 h-4" />
+                      {isUploading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <ImagePlus className="w-4 h-4" />
+                      )}
+                      {isUploading ? 'Uploading...' : 'Upload Image'}
                     </Button>
+                    <Input
+                      id="image-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                      disabled={isUploading}
+                    />
+                    <Input
+                      placeholder="Or enter image URL"
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        setPreviewImage(e.target.value);
+                      }}
+                      disabled={isUploading}
+                    />
                   </div>
-                )}
-                <FormMessage />
-              </div>
-            </FormItem>
-          )}
-        />
 
-        <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={onClose}>
+                  <AnimatePresence>
+                    {previewImage && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className="relative w-full h-48"
+                      >
+                        <img
+                          src={previewImage}
+                          alt="Preview"
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2"
+                          onClick={removeImage}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <FormMessage />
+                </div>
+              </FormItem>
+            )}
+          />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.4 }}
+          className="flex justify-end gap-4"
+        >
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : existingPost ? "Update Post" : "Create Post"}
+          <Button
+            type="submit"
+            disabled={isSubmitting || isUploading}
+            className="min-w-[100px]"
+          >
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : existingPost ? (
+              'Update Post'
+            ) : (
+              'Create Post'
+            )}
           </Button>
-        </div>
+        </motion.div>
       </form>
     </Form>
   );
