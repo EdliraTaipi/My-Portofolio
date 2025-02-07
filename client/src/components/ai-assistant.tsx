@@ -10,80 +10,12 @@ import { cn } from "@/lib/utils";
 import * as THREE from 'three';
 import type { Group, Points as ThreePoints } from 'three';
 
-function ParticleField() {
-  const points = useRef<ThreePoints>(null);
-  const particleCount = 1000; 
-  const positions = new Float32Array(particleCount * 3);
-  const colors = new Float32Array(particleCount * 3);
-
-  useEffect(() => {
-    let animationFrameId: number;
-
-    const animate = () => {
-      if (points.current) {
-        points.current.rotation.y += 0.0001;
-        points.current.rotation.z += 0.00005;
-      }
-      animationFrameId = requestAnimationFrame(animate);
-    };
-
-    animate();
-    return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-    };
-  }, []);
-
-  for (let i = 0; i < particleCount; i++) {
-    const radius = 2 + Math.random() * 2;
-    const theta = THREE.MathUtils.randFloatSpread(360);
-    const phi = THREE.MathUtils.randFloatSpread(360);
-
-    positions[i * 3] = radius * Math.sin(theta) * Math.cos(phi);
-    positions[i * 3 + 1] = radius * Math.sin(theta) * Math.sin(phi);
-    positions[i * 3 + 2] = radius * Math.cos(theta);
-
-    const color = new THREE.Color();
-    color.setHSL(Math.random(), 0.7, 0.7);
-    colors[i * 3] = color.r;
-    colors[i * 3 + 1] = color.g;
-    colors[i * 3 + 2] = color.b;
-  }
-
-  return (
-    <Points ref={points}>
-      <PointMaterial
-        transparent
-        vertexColors
-        size={0.05}
-        sizeAttenuation={true}
-        depthWrite={false}
-      />
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={particleCount}
-          array={positions}
-          itemSize={3}
-        />
-        <bufferAttribute
-          attach="attributes-color"
-          count={particleCount}
-          array={colors}
-          itemSize={3}
-        />
-      </bufferGeometry>
-    </Points>
-  );
-}
-
 function CodeVisualization() {
   const group = useRef<Group>(null);
   const codeSnippets = [
     "const AI = new Intelligence();",
     "while(true) { learn(); }",
-    "if(human.ask()) { assist(); }",
+    "if(human.ask()) { assist(); }"
   ];
 
   useEffect(() => {
@@ -163,14 +95,10 @@ export function AiAssistant() {
     localStorage.setItem('chatMessages', JSON.stringify(messages));
   }, [messages]);
 
-  const scrollToBottom = () => {
+  useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  };
-
-  useEffect(() => {
-    scrollToBottom();
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
     }
@@ -208,7 +136,7 @@ export function AiAssistant() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100]">
+    <div className="fixed bottom-6 right-6 z-50">
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -233,8 +161,8 @@ export function AiAssistant() {
                 </Button>
               </div>
 
-              <div className="flex-1 relative z-[1]"> {/* Increased z-index for 3D visualization */}
-                <div className="absolute inset-0 z-[-1]"> {/*Added z-index for proper layering */}
+              <div className="relative flex-1">
+                <div className="absolute inset-0">
                   {isOpen && (
                     <Canvas>
                       <PerspectiveCamera makeDefault position={[0, 0, 8]} />
@@ -242,7 +170,6 @@ export function AiAssistant() {
                       <pointLight position={[10, 10, 10]} intensity={1} />
                       <spotLight position={[-10, -10, -10]} intensity={0.5} />
                       <CodeVisualization />
-                      <ParticleField />
                       <OrbitControls
                         enableZoom={false}
                         enablePan={false}
@@ -255,56 +182,55 @@ export function AiAssistant() {
                     </Canvas>
                   )}
                 </div>
-                <div className="relative z-[2]"> {/*Increased z-index for chat interface*/}
-                  <div className="h-[200px] border-t bg-background/90 backdrop-blur-sm relative z-10">
-                    <ScrollArea className="h-[156px] p-4" style={{overflowY: 'auto'}}> {/*Added overflow-y to optimize scrolling */}
-                      {messages.map((msg, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
+
+                <div className="absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-sm">
+                  <ScrollArea className="h-[200px] p-4">
+                    {messages.map((msg, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={cn(
+                          'mb-2',
+                          msg.type === 'user' ? 'text-right' : 'text-left'
+                        )}
+                      >
+                        <span
                           className={cn(
-                            'mb-2',
-                            msg.type === 'user' ? 'text-right' : 'text-left'
+                            "inline-block px-3 py-2 rounded-lg max-w-[80%] break-words whitespace-pre-wrap",
+                            msg.type === 'user'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted hover:bg-muted/80 transition-colors'
                           )}
                         >
-                          <span
-                            className={cn(
-                              "inline-block px-3 py-2 rounded-lg max-w-[80%] break-words whitespace-pre-wrap",
-                              msg.type === 'user'
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted hover:bg-muted/80 transition-colors'
-                            )}
-                          >
-                            {msg.text}
-                          </span>
-                        </motion.div>
-                      ))}
-                      <div ref={messagesEndRef} />
-                    </ScrollArea>
-                    <div className="p-2 flex gap-2 border-t bg-card/50 backdrop-blur-sm">
-                      <Input
-                        ref={inputRef}
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyPress={(e: React.KeyboardEvent) => e.key === 'Enter' && handleSend()}
-                        placeholder="Ask me anything..."
-                        disabled={isLoading}
-                        className="bg-background/50 focus:bg-background transition-colors"
-                      />
-                      <Button
-                        onClick={handleSend}
-                        disabled={isLoading}
-                        className="shrink-0"
-                        size="icon"
-                      >
-                        {isLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Send className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
+                          {msg.text}
+                        </span>
+                      </motion.div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </ScrollArea>
+                  <div className="p-2 flex gap-2 border-t">
+                    <Input
+                      ref={inputRef}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyPress={(e: React.KeyboardEvent) => e.key === 'Enter' && handleSend()}
+                      placeholder="Ask me anything..."
+                      disabled={isLoading}
+                      className="bg-background/50 focus:bg-background transition-colors"
+                    />
+                    <Button
+                      onClick={handleSend}
+                      disabled={isLoading}
+                      className="shrink-0"
+                      size="icon"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
+                    </Button>
                   </div>
                 </div>
               </div>
