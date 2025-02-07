@@ -9,44 +9,35 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { MessageCircle, ExternalLink } from "lucide-react";
+import { MessageCircle, Plus } from "lucide-react";
 import { BlogChat } from "./blog-chat";
+import { BlogEditor } from "./blog-editor";
 import { useQuery } from "@tanstack/react-query";
+import type { SelectBlogPost } from "@db/schema";
 
-interface DevToArticle {
-  id: number;
-  title: string;
-  description: string;
-  url: string;
-  published_at: string;
-  tags: string[];
-  user: {
-    name: string;
+interface BlogPost extends SelectBlogPost {
+  author: {
+    username: string;
   };
-  cover_image: string;
 }
 
-const fetchDevToArticles = async (): Promise<DevToArticle[]> => {
-  try {
-    const response = await fetch('/api/dev-articles');
-    if (!response.ok) {
-      throw new Error('Failed to fetch articles');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching DEV.to articles:', error);
-    return [];
+const fetchBlogPosts = async (): Promise<BlogPost[]> => {
+  const response = await fetch('/api/blog');
+  if (!response.ok) {
+    throw new Error('Failed to fetch blog posts');
   }
+  return response.json();
 };
 
 export function BlogSection() {
-  const [selectedArticle, setSelectedArticle] = useState<DevToArticle | null>(null);
+  const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  const { data: articles = [], isLoading } = useQuery({
-    queryKey: ['dev-articles'],
-    queryFn: fetchDevToArticles,
-    refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
+  const { data: posts = [], isLoading } = useQuery({
+    queryKey: ['blog-posts'],
+    queryFn: fetchBlogPosts,
+    refetchInterval: 1000 * 60, // Refetch every minute
   });
 
   return (
@@ -58,22 +49,17 @@ export function BlogSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-3xl font-bold mb-8 text-center">Latest Blog Posts</h2>
-
-          <div className="text-center mb-8">
-            <p className="text-muted-foreground">
-              These are featured articles from DEV.to. To show your own articles:
-            </p>
-            <ol className="mt-4 inline-block text-left">
-              <li className="mb-2">1. Create an account on <a href="https://dev.to" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">DEV.to</a></li>
-              <li className="mb-2">2. Write and publish your articles</li>
-              <li>3. Update the username in the API endpoint to match your DEV.to profile</li>
-            </ol>
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold">Blog Posts</h2>
+            <Button onClick={() => setIsEditorOpen(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              New Post
+            </Button>
           </div>
 
           {isLoading ? (
             <div className="grid md:grid-cols-3 gap-8">
-              {[...Array(6)].map((_, index) => (
+              {[...Array(3)].map((_, index) => (
                 <Card key={index} className="animate-pulse">
                   <CardHeader className="space-y-2">
                     <div className="h-4 bg-muted rounded w-3/4" />
@@ -88,15 +74,15 @@ export function BlogSection() {
                 </Card>
               ))}
             </div>
-          ) : articles.length === 0 ? (
+          ) : posts.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">No articles found. Start writing on DEV.to to see your posts here!</p>
+              <p className="text-muted-foreground">No blog posts yet. Create your first post!</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-8">
-              {articles.map((article, index) => (
+              {posts.map((post, index) => (
                 <motion.div
-                  key={article.id}
+                  key={post.id}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -104,36 +90,29 @@ export function BlogSection() {
                 >
                   <Card className="h-full hover:shadow-lg transition-shadow duration-300">
                     <CardHeader>
-                      {article.cover_image && (
+                      {post.coverImage && (
                         <img
-                          src={article.cover_image}
-                          alt={article.title}
+                          src={post.coverImage}
+                          alt={post.title}
                           className="w-full h-48 object-cover rounded-t-lg mb-4"
                         />
                       )}
                       <div className="flex justify-between items-start mb-2">
-                        <Badge variant="secondary">DEV.to</Badge>
+                        <Badge variant="secondary">Blog</Badge>
                         <span className="text-sm text-muted-foreground">
-                          {new Date(article.published_at).toLocaleDateString()}
+                          {new Date(post.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                      <h3 className="text-xl font-semibold leading-tight mb-2">{article.title}</h3>
-                      <p className="text-sm text-muted-foreground">By {article.user.name}</p>
+                      <h3 className="text-xl font-semibold leading-tight mb-2">{post.title}</h3>
+                      <p className="text-sm text-muted-foreground">By {post.author.username}</p>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground mb-4 line-clamp-3">{article.description}</p>
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {article.tags.map((tag) => (
-                          <Badge key={tag} variant="outline">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
+                      <p className="text-muted-foreground mb-4 line-clamp-3">{post.summary}</p>
                       <div className="flex gap-4">
                         <Button
                           variant="link"
                           className="p-0 h-auto font-semibold hover:text-primary transition-colors"
-                          onClick={() => setSelectedArticle(article)}
+                          onClick={() => setSelectedPost(post)}
                         >
                           Read More →
                         </Button>
@@ -145,41 +124,47 @@ export function BlogSection() {
             </div>
           )}
 
-          <Dialog open={Boolean(selectedArticle)} onOpenChange={(open) => {
+          <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Create New Blog Post</DialogTitle>
+              </DialogHeader>
+              <BlogEditor onClose={() => setIsEditorOpen(false)} />
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={Boolean(selectedPost)} onOpenChange={(open) => {
             if (!open) {
-              setSelectedArticle(null);
+              setSelectedPost(null);
               setIsChatOpen(false);
             }
           }}>
             <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-              {selectedArticle && (
+              {selectedPost && (
                 <>
                   <DialogHeader>
                     <DialogTitle className="text-2xl font-bold mb-2">
-                      {selectedArticle.title}
+                      {selectedPost.title}
                     </DialogTitle>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                      <Badge variant="secondary">DEV.to</Badge>
-                      <span>{new Date(selectedArticle.published_at).toLocaleDateString()}</span>
+                      <Badge variant="secondary">Blog</Badge>
+                      <span>{new Date(selectedPost.createdAt).toLocaleDateString()}</span>
                       <span>·</span>
-                      <span>By {selectedArticle.user.name}</span>
+                      <span>By {selectedPost.author.username}</span>
                     </div>
                   </DialogHeader>
                   <div className="flex gap-8">
                     <div className="flex-1">
-                      <p className="text-muted-foreground mb-4">{selectedArticle.description}</p>
-                      {selectedArticle.url && (
-                        <div className="mt-4">
-                          <Button
-                            variant="outline"
-                            onClick={() => window.open(selectedArticle.url, '_blank')}
-                            className="gap-2"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                            Read on DEV.to
-                          </Button>
-                        </div>
+                      {selectedPost.coverImage && (
+                        <img
+                          src={selectedPost.coverImage}
+                          alt={selectedPost.title}
+                          className="w-full h-64 object-cover rounded-lg mb-6"
+                        />
                       )}
+                      <div className="prose prose-sm dark:prose-invert">
+                        <p className="text-muted-foreground mb-4">{selectedPost.content}</p>
+                      </div>
                     </div>
 
                     <div className="w-80 flex flex-col">
@@ -192,7 +177,7 @@ export function BlogSection() {
                         {isChatOpen ? 'Close Chat' : 'Join Discussion'}
                       </Button>
                       <BlogChat
-                        postId={selectedArticle.id.toString()}
+                        postId={selectedPost.id.toString()}
                         isOpen={isChatOpen}
                       />
                     </div>

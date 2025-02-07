@@ -3,7 +3,9 @@ import { createServer, type Server } from "http";
 import nodemailer from "nodemailer";
 import { z } from "zod";
 import { WebSocketServer, WebSocket } from 'ws';
-import fetch from 'node-fetch';
+import { blogPosts, insertBlogPostSchema } from "@db/schema";
+import { db } from "@db";
+import { eq } from "drizzle-orm";
 
 const contactFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -42,7 +44,6 @@ export function registerRoutes(app: Express): Server {
 
         switch (message.type) {
           case 'join':
-            // Join chat room for specific post
             ws.username = message.username;
             ws.postId = message.postId;
 
@@ -51,7 +52,6 @@ export function registerRoutes(app: Express): Server {
             }
             chatRooms.get(message.postId)?.add(ws);
 
-            // Notify others in the room
             const joinMessage = {
               type: 'system',
               message: `${message.username} joined the chat`,
@@ -80,10 +80,8 @@ export function registerRoutes(app: Express): Server {
 
     ws.on('close', () => {
       if (ws.postId && ws.username) {
-        // Remove from chat room
         chatRooms.get(ws.postId)?.delete(ws);
 
-        // Notify others
         const leaveMessage = {
           type: 'system',
           message: `${ws.username} left the chat`,
@@ -106,6 +104,67 @@ export function registerRoutes(app: Express): Server {
     }
   }
 
+  // Blog posts endpoints
+  app.get("/api/blog", async (_req, res) => {
+    try {
+      const posts = await db.select().from(blogPosts).orderBy(blogPosts.createdAt);
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching blog posts:", error);
+      res.status(500).json({
+        error: "Failed to fetch blog posts",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.post("/api/blog", async (req, res) => {
+    try {
+      const validatedPost = insertBlogPostSchema.parse(req.body);
+      const [post] = await db.insert(blogPosts).values({
+        ...validatedPost,
+        authorId: 1, // TODO: Replace with actual user ID from session
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+
+      res.status(201).json(post);
+    } catch (error) {
+      console.error("Error creating blog post:", error);
+      res.status(500).json({
+        error: "Failed to create blog post",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.put("/api/blog/:id", async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const validatedPost = insertBlogPostSchema.parse(req.body);
+
+      const [updatedPost] = await db.update(blogPosts)
+        .set({
+          ...validatedPost,
+          updatedAt: new Date()
+        })
+        .where(eq(blogPosts.id, postId))
+        .returning();
+
+      if (!updatedPost) {
+        return res.status(404).json({ error: "Blog post not found" });
+      }
+
+      res.json(updatedPost);
+    } catch (error) {
+      console.error("Error updating blog post:", error);
+      res.status(500).json({
+        error: "Failed to update blog post",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Contact form endpoint
   app.post("/api/contact", async (req, res) => {
     try {
@@ -118,13 +177,13 @@ export function registerRoutes(app: Express): Server {
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT),
-        secure: process.env.SMTP_PORT === "465", // Use secure for port 465, otherwise false
+        secure: process.env.SMTP_PORT === "465",
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
         },
         tls: {
-          rejectUnauthorized: false, // Accept self-signed certificates
+          rejectUnauthorized: false,
           ciphers: 'SSLv3'
         }
       });
