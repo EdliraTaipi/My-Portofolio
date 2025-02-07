@@ -1,47 +1,54 @@
 import { useState, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Sphere, Points, PointMaterial } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Points, PointMaterial, Sphere } from '@react-three/drei';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Send, X, Bot } from "lucide-react";
+import { MessageCircle, Send, X, Bot, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as THREE from 'three';
 
-function ParticleRing() {
+function ParticleField() {
   const points = useRef();
+  const particleCount = 5000;
+  const positions = new Float32Array(particleCount * 3);
+  const colors = new Float32Array(particleCount * 3);
 
   useEffect(() => {
     if (!points.current) return;
 
     const animate = () => {
-      points.current.rotation.z += 0.001;
+      points.current.rotation.y += 0.0005;
+      points.current.rotation.z += 0.0002;
       requestAnimationFrame(animate);
     };
 
     animate();
-
     return () => cancelAnimationFrame(animate);
   }, []);
 
-  const particleCount = 2000;
-  const positions = new Float32Array(particleCount * 3);
-  const radius = 2;
-
   for (let i = 0; i < particleCount; i++) {
-    const angle = (i / particleCount) * Math.PI * 2;
-    const randomRadius = radius + (Math.random() - 0.5) * 0.5;
-    positions[i * 3] = Math.cos(angle) * randomRadius;
-    positions[i * 3 + 1] = Math.sin(angle) * randomRadius;
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 0.5;
+    const radius = 5 + Math.random() * 5;
+    const theta = THREE.MathUtils.randFloatSpread(360);
+    const phi = THREE.MathUtils.randFloatSpread(360);
+
+    positions[i * 3] = radius * Math.sin(theta) * Math.cos(phi);
+    positions[i * 3 + 1] = radius * Math.sin(theta) * Math.sin(phi);
+    positions[i * 3 + 2] = radius * Math.cos(theta);
+
+    const color = new THREE.Color();
+    color.setHSL(Math.random(), 0.7, 0.7);
+    colors[i * 3] = color.r;
+    colors[i * 3 + 1] = color.g;
+    colors[i * 3 + 2] = color.b;
   }
 
   return (
     <Points ref={points}>
       <PointMaterial
         transparent
-        color="#88ccff"
+        vertexColors
         size={0.05}
         sizeAttenuation={true}
         depthWrite={false}
@@ -53,12 +60,18 @@ function ParticleRing() {
           array={positions}
           itemSize={3}
         />
+        <bufferAttribute
+          attach="attributes-color"
+          count={particleCount}
+          array={colors}
+          itemSize={3}
+        />
       </bufferGeometry>
     </Points>
   );
 }
 
-function PulsingSphere() {
+function EnergyCore() {
   const sphereRef = useRef();
 
   useEffect(() => {
@@ -66,22 +79,22 @@ function PulsingSphere() {
 
     const animate = () => {
       const time = Date.now() * 0.001;
-      sphereRef.current.scale.x = 1 + Math.sin(time) * 0.1;
-      sphereRef.current.scale.y = 1 + Math.sin(time) * 0.1;
-      sphereRef.current.scale.z = 1 + Math.sin(time) * 0.1;
+      sphereRef.current.scale.x = 1 + Math.sin(time) * 0.2;
+      sphereRef.current.scale.y = 1 + Math.cos(time * 1.3) * 0.2;
+      sphereRef.current.scale.z = 1 + Math.sin(time * 0.7) * 0.2;
+      sphereRef.current.rotation.y += 0.002;
       requestAnimationFrame(animate);
     };
 
     animate();
-
     return () => cancelAnimationFrame(animate);
   }, []);
 
   return (
-    <Sphere ref={sphereRef} args={[1, 32, 32]}>
+    <Sphere ref={sphereRef} args={[1, 64, 64]}>
       <meshPhongMaterial
-        color="#00a3ff"
-        emissive="#003366"
+        color="#4fc3f7"
+        emissive="#0288d1"
         specular="#ffffff"
         shininess={100}
         transparent
@@ -91,58 +104,7 @@ function PulsingSphere() {
   );
 }
 
-const chatResponses = {
-  greeting: [
-    "Hello! I'm your AI guide. I can help you explore Edlira's portfolio, discuss projects, or answer questions about skills and experience. What would you like to know?",
-    "Welcome! I'm here to help you navigate through the portfolio. I can tell you about Edlira's projects, skills, or experience. What interests you most?"
-  ],
-  projects: [
-    "Let me tell you about Edlira's key projects:\n\n1. Modern Portfolio Website: A React-based portfolio with interactive 3D elements and an AI assistant.\n2. Tech Blog Platform: A full-stack application for sharing technical insights.\n3. Real-time Chat System: Implemented using WebSocket for live discussions.\n\nWhich project would you like to know more about?",
-    "Edlira has worked on several exciting projects:\n\n• Frontend Development: React.js applications with modern UI/UX\n• Backend Systems: Node.js and Express APIs\n• Full-stack Solutions: Complete web applications with database integration\n\nWould you like specific details about any of these areas?"
-  ],
-  skills: [
-    "Here's an overview of Edlira's technical skills:\n\n🔹 Frontend: React.js, TypeScript, Tailwind CSS\n🔹 Backend: Node.js, Express, PostgreSQL\n🔹 Tools: Git, Docker, CI/CD\n🔹 Specialties: Responsive Design, API Integration, 3D Web Graphics\n\nWould you like to know more about any specific skill?",
-    "Edlira's expertise includes:\n\n• Modern Web Development\n• Database Design & Management\n• UI/UX Implementation\n• Performance Optimization\n• System Architecture\n\nFeel free to ask about any particular area!"
-  ],
-  experience: [
-    "Let me share Edlira's professional experience:\n\n📌 Full-stack Development: Building complete web applications\n📌 Frontend Specialist: Creating responsive, accessible interfaces\n📌 Technical Leadership: Managing projects and mentoring teams\n\nWould you like more details about any specific role or project?",
-    "Edlira's journey includes:\n\n1. Web Development: Creating modern, scalable applications\n2. System Architecture: Designing robust backend solutions\n3. Technical Innovation: Implementing cutting-edge features\n\nWhat aspect would you like to explore further?"
-  ],
-  default: [
-    "I can help you learn about:\n\n• Projects & Portfolio\n• Technical Skills\n• Professional Experience\n• Blog Articles\n\nWhat would you like to explore?",
-    "I'm knowledgeable about all aspects of Edlira's work, including:\n\n- Development Projects\n- Technical Expertise\n- Professional Background\n- Writing & Publications\n\nFeel free to ask about any topic!"
-  ]
-};
-
-function getResponse(input: string): string {
-  const lowercaseInput = input.toLowerCase();
-  let responses = [];
-
-  // Check for multiple topics in the input
-  if (lowercaseInput.includes('hi') || lowercaseInput.includes('hello')) {
-    responses.push(...chatResponses.greeting);
-  }
-  if (lowercaseInput.includes('project')) {
-    responses.push(...chatResponses.projects);
-  }
-  if (lowercaseInput.includes('skill') || lowercaseInput.includes('tech')) {
-    responses.push(...chatResponses.skills);
-  }
-  if (lowercaseInput.includes('experience') || lowercaseInput.includes('work')) {
-    responses.push(...chatResponses.experience);
-  }
-
-  // If no specific topics found or multiple topics mentioned
-  if (responses.length === 0) {
-    responses = chatResponses.default;
-  }
-
-  // Return a random response from the collected responses
-  return responses[Math.floor(Math.random() * responses.length)];
-}
-
 export function AiAssistant() {
-  // Use localStorage to persist chat state
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState(() => {
     const savedMessages = localStorage.getItem('chatMessages');
@@ -151,10 +113,10 @@ export function AiAssistant() {
     ];
   });
   const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Save messages to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('chatMessages', JSON.stringify(messages));
   }, [messages]);
@@ -170,19 +132,33 @@ export function AiAssistant() {
     }
   }, [messages, isOpen]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
 
-    // Add user message
     setMessages(prev => [...prev, { type: 'user', text: input }]);
-
-    // Generate AI response
-    setTimeout(() => {
-      const response = getResponse(input);
-      setMessages(prev => [...prev, { type: 'assistant', text: response }]);
-    }, 500);
-
     setInput('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: input })
+      });
+
+      if (!response.ok) throw new Error('Failed to get AI response');
+
+      const { response: aiResponse } = await response.json();
+      setMessages(prev => [...prev, { type: 'assistant', text: aiResponse }]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages(prev => [...prev, {
+        type: 'assistant',
+        text: "I apologize, but I'm having trouble connecting to my AI services at the moment. Please try again later."
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -213,19 +189,19 @@ export function AiAssistant() {
 
               <div className="flex-1 relative">
                 <Canvas className="absolute inset-0">
-                  <PerspectiveCamera makeDefault position={[0, 0, 5]} />
+                  <PerspectiveCamera makeDefault position={[0, 0, 10]} />
                   <ambientLight intensity={0.5} />
                   <pointLight position={[10, 10, 10]} intensity={1} />
                   <spotLight position={[-10, -10, -10]} intensity={0.5} />
-                  <PulsingSphere />
-                  <ParticleRing />
+                  <EnergyCore />
+                  <ParticleField />
                   <OrbitControls 
                     enableZoom={false}
                     minPolarAngle={Math.PI / 3}
                     maxPolarAngle={Math.PI / 1.5}
                     enableRotate={true}
                     autoRotate={true}
-                    autoRotateSpeed={1}
+                    autoRotateSpeed={0.5}
                   />
                 </Canvas>
               </div>
@@ -262,14 +238,20 @@ export function AiAssistant() {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                     placeholder="Ask me anything..."
+                    disabled={isLoading}
                     className="bg-background/50 focus:bg-background transition-colors"
                   />
                   <Button 
                     onClick={handleSend}
+                    disabled={isLoading}
                     className="shrink-0"
                     size="icon"
                   >
-                    <Send className="w-4 h-4" />
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
               </div>

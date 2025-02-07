@@ -10,7 +10,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import express from 'express';
-
+import { getChatResponse } from './openai-service';
 
 const contactFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -33,6 +33,25 @@ interface ChatClient extends WebSocket {
 
 export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
+
+  // Add chat endpoint for OpenAI integration
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { message } = req.body;
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      const response = await getChatResponse(message);
+      res.json({ response });
+    } catch (error) {
+      console.error("Chat API error:", error);
+      res.status(500).json({
+        error: "Failed to get AI response",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
 
   // Configure multer for image uploads
   const storage = multer.diskStorage({
