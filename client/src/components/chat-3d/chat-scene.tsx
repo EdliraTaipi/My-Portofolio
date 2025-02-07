@@ -1,35 +1,23 @@
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
+import { PerspectiveCamera } from '@react-three/drei';
 import { Character } from './character';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { Suspense } from 'react';
 
 export function ChatScene({ isSpoken = false }) {
   return (
-    <Canvas shadows>
+    <Canvas
+      shadows={false}
+      camera={{ position: [0, 0, 5], fov: 50 }}
+      style={{ background: 'rgb(10, 10, 10)' }}
+    >
       <PerspectiveCamera makeDefault position={[0, 0, 5]} />
-      <Environment preset="city" />
-      
+
       <ambientLight intensity={0.5} />
-      <directionalLight
-        position={[5, 5, 5]}
-        intensity={1}
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-      />
+      <pointLight position={[10, 10, 10]} intensity={0.5} />
 
-      <Character isSpoken={isSpoken} />
-      
-      <OrbitControls
-        enableZoom={false}
-        enablePan={false}
-        minPolarAngle={Math.PI / 2.5}
-        maxPolarAngle={Math.PI / 2}
-      />
-
-      <EffectComposer>
-        <Bloom intensity={1.5} luminanceThreshold={0.9} />
-      </EffectComposer>
+      <Suspense fallback={null}>
+        <Character isSpoken={isSpoken} />
+      </Suspense>
     </Canvas>
   );
 }

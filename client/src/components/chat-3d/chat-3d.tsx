@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Send, X, Users, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { ChatScene } from './chat-scene';
@@ -16,11 +16,10 @@ interface Message {
 }
 
 export function Chat3D() {
-  const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>(() => {
     const savedMessages = localStorage.getItem('chatMessages');
     return savedMessages ? JSON.parse(savedMessages) : [
-      { type: 'system', message: "Welcome to the 3D chat! I'm your virtual assistant.", timestamp: Date.now() }
+      { type: 'system', message: "Welcome to the 3D chat! Join the conversation.", timestamp: Date.now() }
     ];
   });
   const [input, setInput] = useState('');
@@ -48,7 +47,6 @@ export function Chat3D() {
     const socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
-      console.log('WebSocket connected');
       setIsConnected(true);
       socket.send(JSON.stringify({
         type: 'join',
@@ -59,16 +57,14 @@ export function Chat3D() {
     socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
       setMessages(prev => [...prev, message]);
-      // Trigger character animation
       setIsSpoken(true);
       setTimeout(() => setIsSpoken(false), 1000);
     };
 
     socket.onclose = () => {
-      console.log('WebSocket disconnected');
       setIsConnected(false);
       setTimeout(() => {
-        if (username && isOpen) {
+        if (username) {
           connectWebSocket();
         }
       }, 3000);
@@ -119,136 +115,95 @@ export function Chat3D() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            className="mb-4 w-[400px] h-[600px] bg-card rounded-lg shadow-lg overflow-hidden border"
-          >
-            <div className="h-full flex flex-col">
-              <div className="p-4 bg-muted flex justify-between items-center border-b">
-                <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold">3D Live Chat</h3>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsOpen(false)}
-                  className="hover:bg-background/10"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+    <div className="w-full bg-card rounded-lg shadow-lg overflow-hidden border">
+      <div className="h-[300px] bg-black">
+        <ChatScene isSpoken={isSpoken} />
+      </div>
 
-              <div className="h-[200px] bg-black">
-                <ChatScene isSpoken={isSpoken} />
-              </div>
-
-              {!username || !isConnected ? (
-                <div className="flex-1 flex items-center justify-center p-6">
-                  <div className="w-full max-w-sm space-y-4">
-                    <h4 className="text-lg font-semibold text-center mb-4">
-                      Join the Chat
-                    </h4>
-                    <Input
-                      placeholder="Enter your username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleJoin()}
-                      disabled={isJoining}
-                    />
-                    <Button
-                      className="w-full"
-                      onClick={handleJoin}
-                      disabled={isJoining}
-                    >
-                      {isJoining ? (
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      ) : null}
-                      Join Chat
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex-1 bg-background/50 backdrop-blur">
-                    <ScrollArea className="h-full px-4 py-4">
-                      {messages.map((msg, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={cn(
-                            'mb-4',
-                            msg.type === 'system' ? 'text-center' : msg.username === username ? 'text-right' : 'text-left'
-                          )}
-                        >
-                          {msg.type === 'system' ? (
-                            <span className="inline-block px-3 py-1 text-sm text-muted-foreground bg-muted rounded-full">
-                              {msg.message}
-                            </span>
-                          ) : (
-                            <div className={cn(
-                              'space-y-1',
-                              msg.username === username ? 'items-end' : 'items-start'
-                            )}>
-                              <span className="text-xs text-muted-foreground">
-                                {msg.username === username ? 'You' : msg.username} • {formatTime(msg.timestamp)}
-                              </span>
-                              <span
-                                className={cn(
-                                  "inline-block px-3 py-2 rounded-lg max-w-[80%] break-words",
-                                  msg.username === username
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted'
-                                )}
-                              >
-                                {msg.message}
-                              </span>
-                            </div>
-                          )}
-                        </motion.div>
-                      ))}
-                      <div ref={messagesEndRef} />
-                    </ScrollArea>
-                  </div>
-
-                  <div className="p-4 bg-card border-t">
-                    <div className="flex gap-2">
-                      <Input
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder="Type a message..."
-                        disabled={!isConnected}
-                      />
-                      <Button
-                        onClick={handleSend}
-                        disabled={!isConnected}
-                        size="icon"
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )}
+      <div className="p-6">
+        {!username || !isConnected ? (
+          <div className="flex items-center justify-center">
+            <div className="w-full max-w-sm space-y-4">
+              <h4 className="text-lg font-semibold text-center mb-4">
+                Join the Chat
+              </h4>
+              <Input
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleJoin()}
+                disabled={isJoining}
+              />
+              <Button
+                className="w-full"
+                onClick={handleJoin}
+                disabled={isJoining}
+              >
+                {isJoining ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : null}
+                Join Chat
+              </Button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <ScrollArea className="h-[200px] pr-4">
+              {messages.map((msg, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={cn(
+                    'mb-2',
+                    msg.type === 'system' ? 'text-center' : msg.username === username ? 'text-right' : 'text-left'
+                  )}
+                >
+                  {msg.type === 'system' ? (
+                    <span className="inline-block px-3 py-1 text-sm text-muted-foreground bg-muted rounded-full">
+                      {msg.message}
+                    </span>
+                  ) : (
+                    <div className="space-y-1">
+                      <span className="text-xs text-muted-foreground">
+                        {msg.username === username ? 'You' : msg.username} • {formatTime(msg.timestamp)}
+                      </span>
+                      <span
+                        className={cn(
+                          "inline-block px-3 py-2 rounded-lg max-w-[80%] break-words",
+                          msg.username === username
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted'
+                        )}
+                      >
+                        {msg.message}
+                      </span>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+              <div ref={messagesEndRef} />
+            </ScrollArea>
 
-      <Button
-        size="lg"
-        className="rounded-full w-14 h-14 shadow-lg"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <MessageCircle className="w-6 h-6" />
-      </Button>
+            <div className="flex gap-2">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                placeholder="Type a message..."
+                disabled={!isConnected}
+              />
+              <Button
+                onClick={handleSend}
+                disabled={!isConnected}
+                size="icon"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
