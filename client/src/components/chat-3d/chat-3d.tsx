@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { motion } from "framer-motion";
 import { Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -16,12 +15,9 @@ interface Message {
 }
 
 export function Chat3D() {
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const savedMessages = localStorage.getItem('chatMessages');
-    return savedMessages ? JSON.parse(savedMessages) : [
-      { type: 'system', message: "Welcome to the 3D chat! Join the conversation.", timestamp: Date.now() }
-    ];
-  });
+  const [messages, setMessages] = useState<Message[]>([
+    { type: 'system', message: "Welcome! Join the conversation.", timestamp: Date.now() }
+  ]);
   const [input, setInput] = useState('');
   const [username, setUsername] = useState('');
   const [isConnected, setIsConnected] = useState(false);
@@ -31,16 +27,12 @@ export function Chat3D() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  // Auto-scroll to bottom
   useEffect(() => {
-    localStorage.setItem('chatMessages', JSON.stringify(messages));
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
-
+  // Connect WebSocket
   const connectWebSocket = () => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -63,15 +55,12 @@ export function Chat3D() {
 
     socket.onclose = () => {
       setIsConnected(false);
-      setTimeout(() => {
-        if (username) {
-          connectWebSocket();
-        }
-      }, 3000);
+      if (username) {
+        setTimeout(connectWebSocket, 3000);
+      }
     };
 
-    socket.onerror = (error) => {
-      console.error('WebSocket error:', error);
+    socket.onerror = () => {
       toast({
         title: "Connection Error",
         description: "Failed to connect to chat. Please try again.",
@@ -150,10 +139,8 @@ export function Chat3D() {
           <div className="space-y-4">
             <ScrollArea className="h-[200px] pr-4">
               {messages.map((msg, i) => (
-                <motion.div
+                <div
                   key={i}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
                   className={cn(
                     'mb-2',
                     msg.type === 'system' ? 'text-center' : msg.username === username ? 'text-right' : 'text-left'
@@ -180,7 +167,7 @@ export function Chat3D() {
                       </span>
                     </div>
                   )}
-                </motion.div>
+                </div>
               ))}
               <div ref={messagesEndRef} />
             </ScrollArea>
