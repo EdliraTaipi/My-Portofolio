@@ -10,7 +10,7 @@ export function ChatScene({ isSpoken }: ChatSceneProps) {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const cubeRef = useRef<THREE.Mesh | null>(null);
+  const shapeRef = useRef<THREE.Mesh | null>(null);
   const frameRef = useRef<number>(0);
 
   useEffect(() => {
@@ -24,20 +24,24 @@ export function ChatScene({ isSpoken }: ChatSceneProps) {
       0.1,
       1000
     );
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true,
+      alpha: true 
+    });
 
     renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-    renderer.setClearColor(0x111111);
+    renderer.setClearColor(0x000000, 0); // Transparent background
     containerRef.current.appendChild(renderer.domElement);
 
-    // Create cube
-    const geometry = new THREE.BoxGeometry();
+    // Create an icosahedron (20-sided shape)
+    const geometry = new THREE.IcosahedronGeometry(1, 0);
     const material = new THREE.MeshBasicMaterial({
       color: 0x00ff88,
       wireframe: true,
+      wireframeLinewidth: 2,
     });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+    const shape = new THREE.Mesh(geometry, material);
+    scene.add(shape);
 
     camera.position.z = 5;
 
@@ -45,7 +49,7 @@ export function ChatScene({ isSpoken }: ChatSceneProps) {
     sceneRef.current = scene;
     cameraRef.current = camera;
     rendererRef.current = renderer;
-    cubeRef.current = cube;
+    shapeRef.current = shape;
 
     // Animation
     let time = 0;
@@ -53,18 +57,20 @@ export function ChatScene({ isSpoken }: ChatSceneProps) {
       frameRef.current = requestAnimationFrame(animate);
       time += 0.01;
 
-      if (cubeRef.current) {
-        cubeRef.current.rotation.x = Math.sin(time) * 0.5;
-        cubeRef.current.rotation.y += 0.01;
+      if (shapeRef.current) {
+        // Smooth rotation
+        shapeRef.current.rotation.x = Math.sin(time * 0.5) * 0.5;
+        shapeRef.current.rotation.y += 0.005;
 
+        // Pulse effect when spoken
         if (isSpoken) {
-          cubeRef.current.scale.x = 1.2;
-          cubeRef.current.scale.y = 1.2;
-          cubeRef.current.scale.z = 1.2;
+          shapeRef.current.scale.x = 1.1 + Math.sin(time * 8) * 0.1;
+          shapeRef.current.scale.y = 1.1 + Math.sin(time * 8) * 0.1;
+          shapeRef.current.scale.z = 1.1 + Math.sin(time * 8) * 0.1;
         } else {
-          cubeRef.current.scale.x = 1;
-          cubeRef.current.scale.y = 1;
-          cubeRef.current.scale.z = 1;
+          shapeRef.current.scale.x = 1 + Math.sin(time * 2) * 0.05;
+          shapeRef.current.scale.y = 1 + Math.sin(time * 2) * 0.05;
+          shapeRef.current.scale.z = 1 + Math.sin(time * 2) * 0.05;
         }
       }
 
@@ -98,12 +104,12 @@ export function ChatScene({ isSpoken }: ChatSceneProps) {
     };
   }, []);
 
-  // Handle isSpoken changes
+  // Handle isSpoken changes with color transitions
   useEffect(() => {
-    if (!cubeRef.current) return;
+    if (!shapeRef.current) return;
 
-    const color = isSpoken ? 0xff3366 : 0x00ff88;
-    (cubeRef.current.material as THREE.MeshBasicMaterial).color.setHex(color);
+    const color = isSpoken ? 0x00ffff : 0x00ff88;
+    (shapeRef.current.material as THREE.MeshBasicMaterial).color.setHex(color);
   }, [isSpoken]);
 
   return <div ref={containerRef} className="w-full h-full" />;

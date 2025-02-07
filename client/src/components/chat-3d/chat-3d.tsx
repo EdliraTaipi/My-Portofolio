@@ -26,20 +26,35 @@ export function Chat3D() {
   const socketRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Connect WebSocket
+  useEffect(() => {
+    return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (socketRef.current) {
+        socketRef.current.close();
+      }
+    };
+  }, []);
+
   const connectWebSocket = () => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      return;
+    }
+
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     const socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
       setIsConnected(true);
+      setIsJoining(false);
       socket.send(JSON.stringify({
         type: 'join',
         username: username
@@ -47,16 +62,23 @@ export function Chat3D() {
     };
 
     socket.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      setMessages(prev => [...prev, message]);
-      setIsSpoken(true);
-      setTimeout(() => setIsSpoken(false), 1000);
+      try {
+        const message = JSON.parse(event.data);
+        setMessages(prev => [...prev, message]);
+        setIsSpoken(true);
+        setTimeout(() => setIsSpoken(false), 1000);
+      } catch (error) {
+        console.error('Failed to parse message:', error);
+      }
     };
 
     socket.onclose = () => {
       setIsConnected(false);
-      if (username) {
-        setTimeout(connectWebSocket, 3000);
+      if (username && !reconnectTimeoutRef.current) {
+        reconnectTimeoutRef.current = setTimeout(() => {
+          reconnectTimeoutRef.current = undefined;
+          connectWebSocket();
+        }, 3000);
       }
     };
 
@@ -88,12 +110,20 @@ export function Chat3D() {
   const handleSend = () => {
     if (!input.trim() || !socketRef.current || !isConnected) return;
 
-    socketRef.current.send(JSON.stringify({
-      type: 'chat',
-      message: input.trim()
-    }));
-
-    setInput('');
+    try {
+      socketRef.current.send(JSON.stringify({
+        type: 'chat',
+        message: input.trim()
+      }));
+      setInput('');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatTime = (timestamp: number) => {
@@ -104,16 +134,16 @@ export function Chat3D() {
   };
 
   return (
-    <div className="w-full bg-card rounded-lg shadow-lg overflow-hidden border">
-      <div className="h-[300px] bg-black">
+    <div className="w-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-xl overflow-hidden border border-gray-800">
+      <div className="h-[300px] bg-transparent">
         <ChatScene isSpoken={isSpoken} />
       </div>
 
-      <div className="p-6">
+      <div className="p-6 bg-gradient-to-b from-transparent to-gray-900/50 backdrop-blur-sm">
         {!username || !isConnected ? (
           <div className="flex items-center justify-center">
-            <div className="w-full max-w-sm space-y-4">
-              <h4 className="text-lg font-semibold text-center mb-4">
+            <div className="w-full max-w-sm space-y-4 bg-gray-800/50 p-6 rounded-lg backdrop-blur-md">
+              <h4 className="text-lg font-semibold text-center mb-4 text-gray-100">
                 Join the Chat
               </h4>
               <Input
@@ -122,9 +152,10 @@ export function Chat3D() {
                 onChange={(e) => setUsername(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleJoin()}
                 disabled={isJoining}
+                className="bg-gray-700/50 border-gray-600"
               />
               <Button
-                className="w-full"
+                className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
                 onClick={handleJoin}
                 disabled={isJoining}
               >
@@ -147,20 +178,20 @@ export function Chat3D() {
                   )}
                 >
                   {msg.type === 'system' ? (
-                    <span className="inline-block px-3 py-1 text-sm text-muted-foreground bg-muted rounded-full">
+                    <span className="inline-block px-3 py-1 text-sm text-gray-300 bg-gray-800/50 rounded-full">
                       {msg.message}
                     </span>
                   ) : (
                     <div className="space-y-1">
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-gray-400">
                         {msg.username === username ? 'You' : msg.username} • {formatTime(msg.timestamp)}
                       </span>
                       <span
                         className={cn(
-                          "inline-block px-3 py-2 rounded-lg max-w-[80%] break-words",
+                          "inline-block px-4 py-2 rounded-lg max-w-[80%] break-words shadow-lg",
                           msg.username === username
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
+                            ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
+                            : 'bg-gray-800/70 text-gray-100'
                         )}
                       >
                         {msg.message}
@@ -179,11 +210,13 @@ export function Chat3D() {
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Type a message..."
                 disabled={!isConnected}
+                className="bg-gray-800/50 border-gray-700"
               />
               <Button
                 onClick={handleSend}
                 disabled={!isConnected}
                 size="icon"
+                className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
               >
                 <Send className="w-4 h-4" />
               </Button>
