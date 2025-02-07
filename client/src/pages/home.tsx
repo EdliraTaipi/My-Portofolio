@@ -7,7 +7,7 @@ import { ProjectsSection } from "@/components/projects-section";
 import { BlogSection } from "@/components/blog-section";
 import { ContactForm } from "@/components/contact-form";
 import { Footer } from "@/components/footer";
-import { Chat3D } from "@/components/chat-3d/chat-3d";
+import { Chat3DSection } from "@/components/chat-3d-section";
 
 export default function Home() {
   return (
@@ -21,11 +21,11 @@ export default function Home() {
         <AboutSection />
         <SkillsSection />
         <ProjectsSection />
+        <Chat3DSection />
         <BlogSection />
         <ContactForm />
       </main>
       <Footer />
-      <Chat3D />
     </div>
   );
 }
