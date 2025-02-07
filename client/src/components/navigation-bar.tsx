@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { motion, useScroll, useSpring } from "framer-motion";
+import { useState, useEffect } from "react";
 
 export function NavigationBar() {
   const links = [
@@ -7,6 +8,7 @@ export function NavigationBar() {
     { href: "#about", label: "About" },
     { href: "#skills", label: "Skills" },
     { href: "#projects", label: "Projects" },
+    { href: "#blog", label: "Blog" },
     { href: "#contact", label: "Contact" },
   ];
 
@@ -50,20 +52,17 @@ export function NavigationBar() {
                 <motion.span
                   key={index}
                   className={`text-2xl font-bold ${letter === " " ? "mx-2" : ""} ${
-                    letter === "E" ? "text-primary" : "text-foreground"
+                    letter === "E" ? "text-primary" : ""
                   }`}
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
                     delay: index * 0.1,
-                    duration: 0.5,
-                    repeat: Infinity,
-                    repeatType: "reverse",
-                    repeatDelay: 5
+                    duration: 0.5
                   }}
                   whileHover={{
                     scale: 1.2,
-                    color: "#64ffda",
+                    color: "hsl(170, 100%, 70%)",
                     transition: { duration: 0.2 }
                   }}
                 >
@@ -91,7 +90,8 @@ export function NavigationBar() {
           </div>
         </div>
       </motion.div>
-      <style jsx>{`
+      <style>
+        {`
         .nav-links {
           display: flex;
           gap: 2rem;
@@ -135,7 +135,8 @@ export function NavigationBar() {
             display: none;
           }
         }
-      `}</style>
+        `}
+      </style>
     </nav>
   );
 }

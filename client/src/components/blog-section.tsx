@@ -43,7 +43,7 @@ export function BlogSection() {
   const [selectedArticle, setSelectedArticle] = useState<DevToArticle | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  const { data: articles, isLoading } = useQuery({
+  const { data: articles = [], isLoading } = useQuery({
     queryKey: ['dev-articles'],
     queryFn: fetchDevToArticles,
     refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
@@ -59,6 +59,17 @@ export function BlogSection() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl font-bold mb-8 text-center">Latest Blog Posts</h2>
+
+          <div className="text-center mb-8">
+            <p className="text-muted-foreground">
+              These are featured articles from DEV.to. To show your own articles:
+            </p>
+            <ol className="mt-4 inline-block text-left">
+              <li className="mb-2">1. Create an account on <a href="https://dev.to" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">DEV.to</a></li>
+              <li className="mb-2">2. Write and publish your articles</li>
+              <li>3. Update the username in the API endpoint to match your DEV.to profile</li>
+            </ol>
+          </div>
 
           {isLoading ? (
             <div className="grid md:grid-cols-3 gap-8">
@@ -77,9 +88,13 @@ export function BlogSection() {
                 </Card>
               ))}
             </div>
+          ) : articles.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No articles found. Start writing on DEV.to to see your posts here!</p>
+            </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-8">
-              {articles?.map((article, index) => (
+              {articles.map((article, index) => (
                 <motion.div
                   key={article.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -115,8 +130,8 @@ export function BlogSection() {
                         ))}
                       </div>
                       <div className="flex gap-4">
-                        <Button 
-                          variant="link" 
+                        <Button
+                          variant="link"
                           className="p-0 h-auto font-semibold hover:text-primary transition-colors"
                           onClick={() => setSelectedArticle(article)}
                         >
@@ -130,56 +145,60 @@ export function BlogSection() {
             </div>
           )}
 
-          <Dialog open={!!selectedArticle} onOpenChange={() => {
-            setSelectedArticle(null);
-            setIsChatOpen(false);
+          <Dialog open={Boolean(selectedArticle)} onOpenChange={(open) => {
+            if (!open) {
+              setSelectedArticle(null);
+              setIsChatOpen(false);
+            }
           }}>
             <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-bold mb-2">
-                  {selectedArticle?.title}
-                </DialogTitle>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                  <Badge variant="secondary">DEV.to</Badge>
-                  <span>{new Date(selectedArticle?.published_at || '').toLocaleDateString()}</span>
-                  <span>·</span>
-                  <span>By {selectedArticle?.user.name}</span>
-                </div>
-              </DialogHeader>
-              <div className="flex gap-8">
-                <div className="flex-1">
-                  <p className="text-muted-foreground mb-4">{selectedArticle?.description}</p>
-                  {selectedArticle?.url && (
-                    <div className="mt-4">
+              {selectedArticle && (
+                <>
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-bold mb-2">
+                      {selectedArticle.title}
+                    </DialogTitle>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                      <Badge variant="secondary">DEV.to</Badge>
+                      <span>{new Date(selectedArticle.published_at).toLocaleDateString()}</span>
+                      <span>·</span>
+                      <span>By {selectedArticle.user.name}</span>
+                    </div>
+                  </DialogHeader>
+                  <div className="flex gap-8">
+                    <div className="flex-1">
+                      <p className="text-muted-foreground mb-4">{selectedArticle.description}</p>
+                      {selectedArticle.url && (
+                        <div className="mt-4">
+                          <Button
+                            variant="outline"
+                            onClick={() => window.open(selectedArticle.url, '_blank')}
+                            className="gap-2"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            Read on DEV.to
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="w-80 flex flex-col">
                       <Button
                         variant="outline"
-                        onClick={() => window.open(selectedArticle.url, '_blank')}
-                        className="gap-2"
+                        className="mb-4 gap-2"
+                        onClick={() => setIsChatOpen(!isChatOpen)}
                       >
-                        <ExternalLink className="w-4 h-4" />
-                        Read on DEV.to
+                        <MessageCircle className="w-4 h-4" />
+                        {isChatOpen ? 'Close Chat' : 'Join Discussion'}
                       </Button>
+                      <BlogChat
+                        postId={selectedArticle.id.toString()}
+                        isOpen={isChatOpen}
+                      />
                     </div>
-                  )}
-                </div>
-
-                <div className="w-80 flex flex-col">
-                  <Button
-                    variant="outline"
-                    className="mb-4 gap-2"
-                    onClick={() => setIsChatOpen(!isChatOpen)}
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    {isChatOpen ? 'Close Chat' : 'Join Discussion'}
-                  </Button>
-                  {selectedArticle && (
-                    <BlogChat
-                      postId={selectedArticle.id.toString()}
-                      isOpen={isChatOpen}
-                    />
-                  )}
-                </div>
-              </div>
+                  </div>
+                </>
+              )}
             </DialogContent>
           </Dialog>
         </motion.div>

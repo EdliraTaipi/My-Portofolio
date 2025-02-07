@@ -22,54 +22,95 @@ export function BlogChat({ postId, isOpen }: BlogChatProps) {
   const [username, setUsername] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [hasJoined, setHasJoined] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const maxReconnectAttempts = 5;
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
 
   useEffect(() => {
     if (!isOpen) {
-      wsRef.current?.close();
-      setIsConnected(false);
-      setHasJoined(false);
-      setMessages([]);
+      cleanupWebSocket();
       return;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const ws = new WebSocket(wsUrl);
-
-    ws.onopen = () => {
-      console.log('WebSocket connected');
-      setIsConnected(true);
-    };
-
-    ws.onmessage = (event) => {
-      const newMessage = JSON.parse(event.data);
-      setMessages(prev => [...prev, newMessage]);
-      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-    };
-
-    ws.onclose = () => {
-      console.log('WebSocket disconnected');
-      setIsConnected(false);
-    };
-
-    wsRef.current = ws;
+    connectWebSocket();
 
     return () => {
-      ws.close();
+      cleanupWebSocket();
     };
   }, [isOpen, postId]);
 
+  const cleanupWebSocket = () => {
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+    setIsConnected(false);
+    setHasJoined(false);
+    setMessages([]);
+    setConnectionError(null);
+    setReconnectAttempts(0);
+  };
+
+  const connectWebSocket = () => {
+    if (reconnectAttempts >= maxReconnectAttempts) {
+      setConnectionError("Maximum reconnection attempts reached. Please try again later.");
+      return;
+    }
+
+    try {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      const ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        setIsConnected(true);
+        setConnectionError(null);
+        setReconnectAttempts(0);
+      };
+
+      ws.onmessage = (event) => {
+        const newMessage = JSON.parse(event.data);
+        setMessages(prev => [...prev, newMessage]);
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected');
+        setIsConnected(false);
+        if (isOpen && reconnectAttempts < maxReconnectAttempts) {
+          reconnectTimeoutRef.current = setTimeout(() => {
+            setReconnectAttempts(prev => prev + 1);
+            connectWebSocket();
+          }, 3000);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setConnectionError("Failed to connect to chat. Please try again later.");
+      };
+
+      wsRef.current = ws;
+    } catch (error) {
+      console.error('WebSocket connection error:', error);
+      setConnectionError("Failed to establish chat connection. Please try again later.");
+    }
+  };
+
   const handleJoin = () => {
-    if (!username.trim()) return;
-    
-    wsRef.current?.send(JSON.stringify({
+    if (!username.trim() || !wsRef.current || !isConnected) return;
+
+    wsRef.current.send(JSON.stringify({
       type: 'join',
       postId,
       username: username.trim()
     }));
-    
+
     setHasJoined(true);
   };
 
@@ -93,7 +134,21 @@ export function BlogChat({ postId, isOpen }: BlogChatProps) {
       exit={{ opacity: 0, y: 20 }}
       className="bg-card border rounded-lg p-4 max-w-md w-full mx-auto"
     >
-      {!hasJoined ? (
+      {connectionError ? (
+        <div className="text-center space-y-4">
+          <p className="text-destructive">{connectionError}</p>
+          <Button 
+            onClick={() => {
+              setConnectionError(null);
+              setReconnectAttempts(0);
+              connectWebSocket();
+            }}
+            disabled={reconnectAttempts >= maxReconnectAttempts}
+          >
+            Try Again
+          </Button>
+        </div>
+      ) : !hasJoined ? (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Join the Discussion</h3>
           <Input
@@ -114,12 +169,12 @@ export function BlogChat({ postId, isOpen }: BlogChatProps) {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Live Chat</h3>
-            <span className="text-sm text-muted-foreground">
+            <span className={`text-sm ${isConnected ? 'text-green-500' : 'text-destructive'}`}>
               {isConnected ? 'Connected' : 'Disconnected'}
             </span>
           </div>
-          
-          <ScrollArea className="h-[300px] rounded border p-4" ref={scrollRef}>
+
+          <ScrollArea className="h-[300px] rounded border p-4">
             <AnimatePresence>
               {messages.map((msg, index) => (
                 <motion.div

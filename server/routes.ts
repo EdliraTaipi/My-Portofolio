@@ -207,11 +207,25 @@ export function registerRoutes(app: Express): Server {
   // Add DEV.to articles endpoint
   app.get("/api/dev-articles", async (req, res) => {
     try {
-      const response = await fetch('https://dev.to/api/articles?username=edlirataipi');
+      // First try to get articles from the user's profile
+      const username = 'edlirataipi'; // Your DEV.to username
+      let response = await fetch(`https://dev.to/api/articles?username=${username}`);
+
       if (!response.ok) {
         throw new Error('Failed to fetch DEV.to articles');
       }
-      const articles = await response.json();
+
+      let articles = await response.json();
+
+      // If no articles found for the user, get some featured articles as examples
+      if (articles.length === 0) {
+        response = await fetch('https://dev.to/api/articles?state=rising&per_page=6');
+        if (!response.ok) {
+          throw new Error('Failed to fetch featured articles');
+        }
+        articles = await response.json();
+      }
+
       res.json(articles);
     } catch (error) {
       console.error('Error fetching DEV.to articles:', error);
