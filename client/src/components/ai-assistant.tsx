@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Points, PointMaterial, Sphere } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Points, PointMaterial, Text3D, Center } from '@react-three/drei';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -71,18 +71,30 @@ function ParticleField() {
   );
 }
 
-function EnergyCore() {
-  const sphereRef = useRef();
+function CodeVisualization() {
+  const group = useRef();
+  const codeSnippets = [
+    "const AI = new Intelligence();",
+    "while(true) { learn(); }",
+    "if(human.ask()) { assist(); }",
+    "function solve(problem) {",
+    "return solution.optimal;",
+    "async function think() {"
+  ];
 
   useEffect(() => {
-    if (!sphereRef.current) return;
+    if (!group.current) return;
 
     const animate = () => {
-      const time = Date.now() * 0.001;
-      sphereRef.current.scale.x = 1 + Math.sin(time) * 0.2;
-      sphereRef.current.scale.y = 1 + Math.cos(time * 1.3) * 0.2;
-      sphereRef.current.scale.z = 1 + Math.sin(time * 0.7) * 0.2;
-      sphereRef.current.rotation.y += 0.002;
+      group.current.rotation.y += 0.001;
+
+      // Animate each text child
+      group.current.children.forEach((child, i) => {
+        const time = Date.now() * 0.001;
+        child.position.y = Math.sin(time + i) * 0.5;
+        child.rotation.z = Math.sin(time * 0.5 + i) * 0.1;
+      });
+
       requestAnimationFrame(animate);
     };
 
@@ -91,16 +103,32 @@ function EnergyCore() {
   }, []);
 
   return (
-    <Sphere ref={sphereRef} args={[1, 64, 64]}>
-      <meshPhongMaterial
-        color="#4fc3f7"
-        emissive="#0288d1"
-        specular="#ffffff"
-        shininess={100}
-        transparent
-        opacity={0.9}
-      />
-    </Sphere>
+    <group ref={group}>
+      {codeSnippets.map((text, index) => {
+        const angle = (index / codeSnippets.length) * Math.PI * 2;
+        const radius = 2;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        return (
+          <group key={index} position={[x, 0, z]} rotation={[0, -angle, 0]}>
+            <Text3D
+              font="/fonts/RobotoMono_Regular.json"
+              size={0.2}
+              height={0.1}
+              curveSegments={12}
+            >
+              {text}
+              <meshPhongMaterial
+                color="#4fc3f7"
+                emissive="#0288d1"
+                specular="#ffffff"
+                shininess={100}
+              />
+            </Text3D>
+          </group>
+        );
+      })}
+    </group>
   );
 }
 
@@ -193,7 +221,7 @@ export function AiAssistant() {
                   <ambientLight intensity={0.5} />
                   <pointLight position={[10, 10, 10]} intensity={1} />
                   <spotLight position={[-10, -10, -10]} intensity={0.5} />
-                  <EnergyCore />
+                  <CodeVisualization />
                   <ParticleField />
                   <OrbitControls 
                     enableZoom={false}
