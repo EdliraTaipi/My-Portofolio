@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from 'ws';
 import nodemailer from "nodemailer";
@@ -9,6 +9,8 @@ import { eq } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+//Removed unnecessary import
+//import express from 'express';
 import express from 'express';
 
 const contactFormSchema = z.object({
@@ -65,7 +67,7 @@ export function registerRoutes(app: Express): Server {
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Image upload endpoint
-  app.post('/api/upload', upload.single('image'), (req, res) => {
+  app.post('/api/upload', upload.single('image'), (req: Request, res: Response) => {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
@@ -74,7 +76,7 @@ export function registerRoutes(app: Express): Server {
     res.json({ imageUrl });
   });
 
-  // Initialize WebSocket server with a specific path to avoid conflicts with Vite HMR
+  // Initialize WebSocket server
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 
   // Store active chat clients
@@ -139,7 +141,7 @@ export function registerRoutes(app: Express): Server {
   }
 
   // Blog posts endpoints
-  app.get("/api/blog", async (_req, res) => {
+  app.get("/api/blog", async (_req: Request, res: Response) => {
     try {
       const posts = await db.select().from(blogPosts).orderBy(blogPosts.createdAt);
       res.json(posts);
@@ -152,7 +154,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/blog", async (req, res) => {
+  app.post("/api/blog", async (req: Request, res: Response) => {
     try {
       const validatedPost = insertBlogPostSchema.parse(req.body);
       const [post] = await db.insert(blogPosts).values({
@@ -172,7 +174,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.put("/api/blog/:id", async (req, res) => {
+  app.put("/api/blog/:id", async (req: Request, res: Response) => {
     try {
       const postId = parseInt(req.params.id);
       const validatedPost = insertBlogPostSchema.parse(req.body);
@@ -199,7 +201,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/contact", async (req, res) => {
+  app.post("/api/contact", async (req: Request, res: Response) => {
     try {
       const { name, email, message } = contactFormSchema.parse(req.body);
 
@@ -270,8 +272,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add GitHub blog feed endpoint
-  app.get("/api/github-blog", async (req, res) => {
+  // GitHub blog feed endpoint
+  app.get("/api/github-blog", async (_req: Request, res: Response) => {
     try {
       const response = await fetch('https://github.blog/news-insights/feed/');
       if (!response.ok) {
@@ -288,8 +290,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add DEV.to articles endpoint
-  app.get("/api/dev-articles", async (req, res) => {
+  // DEV.to articles endpoint
+  app.get("/api/dev-articles", async (_req: Request, res: Response) => {
     try {
       // First try to get articles from the user's profile
       const username = 'edlirataipi'; // Your DEV.to username
